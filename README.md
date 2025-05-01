@@ -17,6 +17,10 @@ A simple note-taking application built with Next.js that persists data in localS
    \`\`\`
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
+## Sreenshots
+![note taker sc](note1.png)
+![note taker sc](note2.png)
+
 ## Design Decisions
 
 ### Storage Strategy
