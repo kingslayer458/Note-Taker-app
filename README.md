@@ -2,7 +2,7 @@
 
 A simple note-taking application built with Next.js that persists data in localStorage.
 
-📺 **Live Demo**: [note taker app](https://v0-react-note-app-tau.vercel.app/)
+📺 **Live Demo**: 👉[note taker app](https://v0-react-note-app-tau.vercel.app/)
 
 ## Setup & Run Steps
 
