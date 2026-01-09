@@ -2,20 +2,17 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
-
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN pnpm install
+RUN npm install
 
 # Copy application code
 COPY . .
 
 # Build the Next.js app
-RUN pnpm run build
+RUN npm run build
 
 # Expose port 3000
 EXPOSE 3000
@@ -24,4 +21,4 @@ EXPOSE 3000
 ENV NODE_ENV=production
 
 # Start the app
-CMD ["pnpm", "start"]
+CMD ["npm", "start"]
