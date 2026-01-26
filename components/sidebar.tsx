@@ -85,10 +85,14 @@ export default function Sidebar({ view, setView, noteCount }: SidebarProps) {
             className="w-full justify-start"
             onClick={() => handleViewChange("list")}
           >
-            <List className="mr-2 h-4 w-4" />
-            Notes
+            <List className="mr-2 h-4 w-4 flex-shrink-0" />
+            <span>Notes</span>
             {noteCount > 0 && (
-              <span className="ml-auto bg-muted text-xs rounded-full px-2 py-0.5">
+              <span className={`ml-auto text-xs rounded-full px-2 py-0.5 flex-shrink-0 ${
+                view === "list" 
+                  ? "bg-primary-foreground text-primary" 
+                  : "bg-muted text-muted-foreground"
+              }`}>
                 {noteCount}
               </span>
             )}
