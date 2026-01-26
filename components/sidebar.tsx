@@ -102,14 +102,14 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
           pt-16 md:pt-4
         `}
       >
-        <div className="hidden md:flex items-center justify-center mb-8 mt-4">
+        <div className="hidden md:flex items-center justify-center mb-6 mt-2">
           <h1 className="text-2xl font-bold">NoteTaker</h1>
         </div>
 
-        <nav className="space-y-2 flex-1">
+        <nav className="space-y-3 flex-1 mt-2">
           <Button
             variant={view === "list" ? "default" : "ghost"}
-            className="w-full justify-start"
+            className="w-full justify-start py-5"
             onClick={() => handleViewChange("list")}
           >
             <List className="mr-2 h-4 w-4 flex-shrink-0" />
@@ -127,7 +127,7 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
 
           <Button
             variant={view === "add" ? "default" : "ghost"}
-            className="w-full justify-start"
+            className="w-full justify-start py-5"
             onClick={() => handleViewChange("add")}
           >
             <PenLine className="mr-2 h-4 w-4" />
@@ -136,7 +136,7 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
 
           <Button
             variant="ghost"
-            className="w-full justify-start"
+            className="w-full justify-start py-5"
             onClick={handleSync}
             disabled={isSyncing}
           >
