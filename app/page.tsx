@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getNotes, saveNote, deleteNote } from "@/lib/storage"
+import { getNotes, saveNote, deleteNote, updateNote } from "@/lib/storage"
 import type { Note } from "@/lib/types"
 import Sidebar from "@/components/sidebar"
 import NotesList from "@/components/notes-list"
@@ -18,30 +18,21 @@ export default function Home() {
 
   useEffect(() => {
     // Load notes from localStorage on mount
-    try {
-      const storedNotes = getNotes()
-      setNotes(storedNotes)
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to load notes from storage",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [toast])
+    const storedNotes = getNotes()
+    setNotes(storedNotes)
+    setIsLoading(false)
+  }, [])
 
-  const handleAddNote = async (newNote: Note) => {
+  const handleAddNote = (newNote: Note) => {
     try {
-      await saveNote(newNote)
+      saveNote(newNote)
       setNotes((prevNotes) => [newNote, ...prevNotes])
       setView("list")
 
       toast({
         description: "Note saved successfully",
       })
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to save note",
@@ -50,9 +41,9 @@ export default function Home() {
     }
   }
 
-  const handleDeleteNote = async (id: string) => {
+  const handleDeleteNote = (id: string) => {
     try {
-      await deleteNote(id)
+      deleteNote(id)
       setNotes((prevNotes) => prevNotes.filter((note) => note.id !== id))
       if (selectedNote?.id === id) {
         setSelectedNote(null)
@@ -61,7 +52,7 @@ export default function Home() {
       toast({
         description: "Note deleted successfully",
       })
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete note",
@@ -73,6 +64,27 @@ export default function Home() {
   const handleSelectNote = (note: Note) => {
     setSelectedNote(note)
     setView("view")
+  }
+
+  const handleUpdateNote = (updatedNote: Note) => {
+    try {
+      // Persist change
+      updateNote(updatedNote)
+
+      // Update local state
+      setNotes((prev) => prev.map((n) => (n.id === updatedNote.id ? updatedNote : n)))
+      setSelectedNote(updatedNote)
+
+      toast({
+        description: "Note updated successfully",
+      })
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to update note",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -96,6 +108,7 @@ export default function Home() {
             note={selectedNote}
             onBack={() => setView("list")}
             onDelete={() => handleDeleteNote(selectedNote.id)}
+            onUpdate={(note) => handleUpdateNote(note)}
           />
         )}
       </main>
