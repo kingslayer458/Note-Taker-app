@@ -68,21 +68,21 @@ export default function AddNote({ onAddNote }: AddNoteProps) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto px-0 sm:px-4">
       <Card className="border-t-4" style={{ borderTopColor: color }}>
-        <CardHeader>
-          <CardTitle>Create New Note</CardTitle>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl">Create New Note</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">
             {error && (
-              <div className="bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded">
+              <div className="bg-destructive/20 border border-destructive text-destructive px-3 sm:px-4 py-2 sm:py-3 rounded text-sm">
                 <span>{error}</span>
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title" className="text-sm">Title</Label>
               <Input
                 id="title"
                 ref={titleInputRef}
@@ -90,31 +90,32 @@ export default function AddNote({ onAddNote }: AddNoteProps) {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Note title"
                 disabled={isSaving}
+                className="text-base"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="content">Content</Label>
+              <Label htmlFor="content" className="text-sm">Content</Label>
               <textarea
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Write your note here..."
-                rows={8}
+                rows={6}
                 disabled={isSaving}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm sm:text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-h-[150px] sm:min-h-[200px] resize-y"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Note Color</Label>
-              <div className="flex flex-wrap gap-2">
+              <Label className="text-sm">Note Color</Label>
+              <div className="flex flex-wrap gap-2 sm:gap-3">
                 {["#6366f1", "#8b5cf6", "#ec4899", "#ef4444", "#f97316", "#22c55e"].map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => setColor(c)}
-                    className={`w-6 h-6 rounded-full ${color === c ? "ring-2 ring-ring" : ""}`}
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full transition-transform hover:scale-110 ${color === c ? "ring-2 ring-ring ring-offset-2" : ""}`}
                     style={{ backgroundColor: c }}
                     aria-label={`Select color ${c}`}
                   />
@@ -123,8 +124,8 @@ export default function AddNote({ onAddNote }: AddNoteProps) {
             </div>
           </CardContent>
 
-          <CardFooter>
-            <Button type="submit" disabled={isSaving}>
+          <CardFooter className="p-4 sm:p-6 pt-0 sm:pt-0">
+            <Button type="submit" disabled={isSaving} className="w-full sm:w-auto">
               <Save className="mr-2 h-4 w-4" />
               {isSaving ? "Saving..." : "Save Note"}
             </Button>
