@@ -32,7 +32,7 @@ export default function Home() {
       toast({
         description: "Note saved successfully",
       })
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to save note",
@@ -52,7 +52,7 @@ export default function Home() {
       toast({
         description: "Note deleted successfully",
       })
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete note",
@@ -78,7 +78,7 @@ export default function Home() {
       toast({
         description: "Note updated successfully",
       })
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to update note",
