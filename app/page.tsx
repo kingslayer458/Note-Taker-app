@@ -91,7 +91,7 @@ export default function Home() {
     <div className="flex h-screen bg-background">
       <Sidebar view={view} setView={setView} noteCount={notes.length} />
 
-      <main className="flex-1 overflow-auto p-4 md:p-6">
+      <main className="flex-1 overflow-auto p-4 md:p-6 pt-20 md:pt-6 w-full">
         {view === "list" && (
           <NotesList
             notes={notes}

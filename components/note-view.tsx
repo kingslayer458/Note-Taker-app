@@ -57,27 +57,28 @@ export default function NoteView({ note, onBack, onDelete, onUpdate }: NoteViewP
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-4">
-        <Button variant="ghost" onClick={onBack} className="gap-2">
+    <div className="w-full max-w-2xl mx-auto px-0 sm:px-4">
+      <div className="mb-3 sm:mb-4">
+        <Button variant="ghost" onClick={onBack} className="gap-2 text-sm sm:text-base">
           <ArrowLeft className="h-4 w-4" />
-          Back to notes
+          <span className="hidden xs:inline">Back to notes</span>
+          <span className="xs:hidden">Back</span>
         </Button>
       </div>
 
       <Card className="border-t-4" style={{ borderTopColor: color }}>
-        <CardHeader className="relative pb-0">
-          <div className="absolute top-4 right-4 flex gap-2">
+        <CardHeader className="relative pb-0 p-4 sm:p-6">
+          <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex gap-1 sm:gap-2">
             {!isEditing && (
               <>
-                <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)} title="Edit note">
+                <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)} title="Edit note" className="h-8 w-8 sm:h-9 sm:w-9">
                   <Pencil className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={onDelete}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  className="h-8 w-8 sm:h-9 sm:w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
                   title="Delete note"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -87,26 +88,26 @@ export default function NoteView({ note, onBack, onDelete, onUpdate }: NoteViewP
           </div>
 
           {isEditing ? (
-            <div className="space-y-2">
+            <div className="space-y-2 pr-16 sm:pr-20">
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-lg font-bold"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-base sm:text-lg font-bold"
                 placeholder="Note title"
               />
-              <p className="text-sm text-muted-foreground">{formatDate(note.createdAt)}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">{formatDate(note.createdAt)}</p>
             </div>
           ) : (
-            <>
-              <h1 className="text-2xl font-bold">{note.title}</h1>
-              <p className="text-sm text-muted-foreground">{formatDate(note.createdAt)}</p>
-            </>
+            <div className="pr-16 sm:pr-20">
+              <h1 className="text-xl sm:text-2xl font-bold break-words">{note.title}</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">{formatDate(note.createdAt)}</p>
+            </div>
           )}
         </CardHeader>
 
-        <CardContent className="pt-6">
+        <CardContent className="pt-4 sm:pt-6 p-4 sm:p-6">
           {error && (
-            <div className="bg-destructive/20 border border-destructive text-destructive px-4 py-3 rounded mb-4">
+            <div className="bg-destructive/20 border border-destructive text-destructive px-3 sm:px-4 py-2 sm:py-3 rounded mb-4 text-sm">
               <span>{error}</span>
             </div>
           )}
@@ -118,20 +119,20 @@ export default function NoteView({ note, onBack, onDelete, onUpdate }: NoteViewP
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  rows={8}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  rows={6}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm sm:text-base min-h-[150px] sm:min-h-[200px] resize-y"
                 />
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm">Note Color</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 sm:gap-3">
                   {["#6366f1", "#8b5cf6", "#ec4899", "#ef4444", "#f97316", "#22c55e"].map((c) => (
                     <button
                       key={c}
                       type="button"
                       onClick={() => setColor(c)}
-                      className={`w-6 h-6 rounded-full ${color === c ? "ring-2 ring-ring" : ""}`}
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full transition-transform hover:scale-110 ${color === c ? "ring-2 ring-ring ring-offset-2" : ""}`}
                       style={{ backgroundColor: c }}
                       aria-label={`Select color ${c}`}
                     />
@@ -140,21 +141,21 @@ export default function NoteView({ note, onBack, onDelete, onUpdate }: NoteViewP
               </div>
             </div>
           ) : (
-            <div className="prose dark:prose-invert max-w-none">
-              <div className="whitespace-pre-wrap">{note.content}</div>
+            <div className="prose dark:prose-invert max-w-none text-sm sm:text-base">
+              <div className="whitespace-pre-wrap break-words">{note.content}</div>
             </div>
           )}
         </CardContent>
 
-        <CardFooter className="flex justify-between">
-          <div className="text-xs text-muted-foreground">ID: {note.id.substring(0, 8)}...</div>
+        <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 p-4 sm:p-6 pt-0 sm:pt-0">
+          <div className="text-xs text-muted-foreground order-2 sm:order-1">ID: {note.id.substring(0, 8)}...</div>
 
           {isEditing ? (
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
+            <div className="flex gap-2 w-full sm:w-auto order-1 sm:order-2">
+              <Button variant="outline" onClick={() => setIsEditing(false)} className="flex-1 sm:flex-none">
                 Cancel
               </Button>
-              <Button onClick={handleSave}>
+              <Button onClick={handleSave} className="flex-1 sm:flex-none">
                 Save
               </Button>
             </div>
