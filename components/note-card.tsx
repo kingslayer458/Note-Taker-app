@@ -24,17 +24,17 @@ export default function NoteCard({ note, onClick, onDelete }: NoteCardProps) {
 
   return (
     <Card
-      className="h-full cursor-pointer overflow-hidden border-t-4 hover:shadow-md transition-all duration-200 active:scale-[0.98]"
+      className="h-full cursor-pointer overflow-hidden border-t-4 hover:shadow-md transition-all duration-200 active:scale-[0.98] flex flex-col"
       style={{ borderTopColor: note.color || "#6366f1" }}
       onClick={onClick}
     >
-      <CardContent className="p-4 sm:p-5">
+      <CardContent className="p-4 sm:p-5 flex-1">
         <h3 className="font-bold text-base sm:text-lg mb-2 line-clamp-1">{note.title}</h3>
         <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">{formatDate(note.createdAt)}</p>
         <p className="text-xs sm:text-sm line-clamp-3 sm:line-clamp-4 whitespace-pre-wrap">{truncatedContent}</p>
       </CardContent>
 
-      <CardFooter className="p-2 sm:p-3 pt-0 flex justify-end">
+      <CardFooter className="p-2 sm:p-3 pt-0 flex justify-end mt-auto">
         <Button
           variant="ghost"
           size="icon"
