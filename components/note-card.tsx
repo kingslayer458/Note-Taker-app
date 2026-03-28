@@ -24,7 +24,7 @@ export default function NoteCard({ note, onClick, onDelete }: NoteCardProps) {
 
   return (
     <Card
-      className="h-full cursor-pointer overflow-hidden border-t-4 hover:shadow-md transition-all duration-200 active:scale-[0.98] flex flex-col"
+      className="h-full min-h-[220px] cursor-pointer overflow-hidden border-t-4 hover:shadow-md transition-all duration-200 active:scale-[0.98] flex flex-col"
       style={{ borderTopColor: note.color || "#6366f1" }}
       onClick={onClick}
     >
