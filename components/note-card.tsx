@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react"
 import type { Note } from "@/lib/types"
