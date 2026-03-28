@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getNotes, saveNote, deleteNote, updateNote, fetchAndMergeNotes, checkApiHealth } from "@/lib/storage"
+import { getNotes, saveNote, deleteNote, updateNote } from "@/lib/storage"
 import type { Note } from "@/lib/types"
 import Sidebar from "@/components/sidebar"
 import NotesList from "@/components/notes-list"
@@ -17,52 +17,11 @@ export default function Home() {
   const { toast } = useToast()
 
   useEffect(() => {
-    // Load notes - try to fetch from cloud first, fallback to localStorage
-    const loadNotes = async () => {
-      setIsLoading(true)
-      try {
-        // Check if backend is available
-        const isOnline = await checkApiHealth()
-        
-        if (isOnline) {
-          // Fetch and merge notes from cloud + localStorage
-          const mergedNotes = await fetchAndMergeNotes()
-          setNotes(mergedNotes)
-        } else {
-          // Offline - use localStorage only
-          const storedNotes = getNotes()
-          setNotes(storedNotes)
-        }
-      } catch (error) {
-        console.error("Error loading notes:", error)
-        // Fallback to localStorage
-        const storedNotes = getNotes()
-        setNotes(storedNotes)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadNotes()
+    // Load notes from localStorage on mount
+    const storedNotes = getNotes()
+    setNotes(storedNotes)
+    setIsLoading(false)
   }, [])
-
-  // Handler for when sync completes - refresh notes from storage
-  const handleSyncComplete = (syncedNotes: Note[]) => {
-    setNotes(syncedNotes)
-    // Update selected note if it was updated
-    if (selectedNote) {
-      const updatedSelectedNote = syncedNotes.find(n => n.id === selectedNote.id)
-      if (updatedSelectedNote) {
-        setSelectedNote(updatedSelectedNote)
-      } else {
-        // Selected note was deleted in cloud
-        setSelectedNote(null)
-        if (view === "view") {
-          setView("list")
-        }
-      }
-    }
-  }
 
   const handleAddNote = (newNote: Note) => {
     try {
@@ -130,12 +89,7 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar 
-        view={view} 
-        setView={setView} 
-        noteCount={notes.length} 
-        onSyncComplete={handleSyncComplete}
-      />
+      <Sidebar view={view} setView={setView} noteCount={notes.length} />
 
       <main className="flex-1 overflow-auto p-4 md:p-6 pt-20 md:pt-6 w-full">
         {view === "list" && (
