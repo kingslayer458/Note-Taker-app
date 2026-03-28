@@ -1,30 +1,57 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { PenLine, List, Moon, Sun, Menu, X } from "lucide-react"
+import { PenLine, List, Moon, Sun, Menu, X, Cloud, CloudOff, RefreshCw } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
+import { syncNotesToCloud, checkApiHealth } from "@/lib/storage"
+import type { Note } from "@/lib/types"
 
 interface SidebarProps {
   view: "list" | "add" | "view"
   setView: (view: "list" | "add" | "view") => void
   noteCount: number
+  onSyncComplete?: (notes: Note[]) => void
 }
 
-export default function Sidebar({ view, setView, noteCount }: SidebarProps) {
+export default function Sidebar({ view, setView, noteCount, onSyncComplete }: SidebarProps) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [isOnline, setIsOnline] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true)
+    // Check API health on mount
+    checkApiHealth().then(setIsOnline)
   }, [])
 
   // Close sidebar when view changes on mobile
   const handleViewChange = (newView: "list" | "add" | "view") => {
     setView(newView)
     setIsOpen(false)
+  }
+
+  const handleSync = async () => {
+    setIsSyncing(true)
+    try {
+      const result = await syncNotesToCloud()
+      // Recheck online status after sync
+      const online = await checkApiHealth()
+      setIsOnline(online)
+      
+      if (result.success) {
+        onSyncComplete?.(result.notes)
+      }
+      alert(result.message)
+    } catch (error) {
+      alert("Failed to sync notes")
+      console.error(error)
+    } finally {
+      setIsSyncing(false)
+    }
   }
 
   return (
@@ -75,14 +102,14 @@ export default function Sidebar({ view, setView, noteCount }: SidebarProps) {
           pt-16 md:pt-4
         `}
       >
-        <div className="hidden md:flex items-center justify-center mb-8 mt-4">
+        <div className="hidden md:flex items-center justify-center mb-6 mt-2">
           <h1 className="text-2xl font-bold">NoteTaker</h1>
         </div>
 
-        <nav className="space-y-2 flex-1">
+        <nav className="space-y-3 flex-1 mt-2">
           <Button
             variant={view === "list" ? "default" : "ghost"}
-            className="w-full justify-start"
+            className="w-full justify-start py-5"
             onClick={() => handleViewChange("list")}
           >
             <List className="mr-2 h-4 w-4 flex-shrink-0" />
@@ -100,13 +127,38 @@ export default function Sidebar({ view, setView, noteCount }: SidebarProps) {
 
           <Button
             variant={view === "add" ? "default" : "ghost"}
-            className="w-full justify-start"
+            className="w-full justify-start py-5"
             onClick={() => handleViewChange("add")}
           >
             <PenLine className="mr-2 h-4 w-4" />
             New Note
           </Button>
+
+          <Button
+            variant="ghost"
+            className="w-full justify-start py-5"
+            onClick={handleSync}
+            disabled={isSyncing}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
+            {isSyncing ? "Syncing..." : "Sync to Cloud"}
+          </Button>
         </nav>
+
+        {/* Cloud status indicator */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+          {isOnline ? (
+            <>
+              <Cloud className="h-3 w-3 text-green-500" />
+              <span>Backend connected</span>
+            </>
+          ) : (
+            <>
+              <CloudOff className="h-3 w-3 text-red-500" />
+              <span>Offline mode</span>
+            </>
+          )}
+        </div>
 
         {/* Dark mode toggle - only visible on desktop sidebar */}
         {mounted && (
@@ -114,7 +166,7 @@ export default function Sidebar({ view, setView, noteCount }: SidebarProps) {
             variant="outline"
             size="sm"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="mt-auto hidden md:flex"
+            className="hidden md:flex"
           >
             {theme === "dark" ? (
               <>
