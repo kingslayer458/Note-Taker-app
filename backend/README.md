@@ -32,10 +32,10 @@ pip install -r requirements.txt
 
 ### 3. Configure Environment
 
-Copy `.env.example` to `.env` and update values:
+Copy `env.txt` to `.env` and update values:
 
 ```bash
-cp .env.example .env
+cp env.txt .env
 ```
 
 Edit `.env`:
@@ -47,6 +47,22 @@ MONGODB_URL=mongodb://localhost:27017
 # MONGODB_URL=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/?retryWrites=true&w=majority
 
 DATABASE_NAME=notetaker
+API_KEY=dev-note-taker-api-key
+API_KEY_HEADER=x-api-key
+```
+
+### 3.1 API Key Authentication
+
+All `/api/notes/*` endpoints require an API key header.
+
+- Header name: `x-api-key` (or your `API_KEY_HEADER` value)
+- Header value: must match `API_KEY` in backend `.env`
+
+Example:
+
+```bash
+curl -X GET http://localhost:8000/api/notes \
+  -H "x-api-key: generaeted-api-key-here"
 ```
 
 ### 4. Run the Server
@@ -83,6 +99,7 @@ Once running, visit:
 
 ```bash
 curl -X POST http://localhost:8000/api/notes/sync \
+  -H "x-api-key: enter your generated api key" \
   -H "Content-Type: application/json" \
   -d '{
     "notes": [

@@ -1,0 +1,3 @@
+python -c "import secrets; print('ntk_' + secrets.token_hex(32))"
+
+node -e "const crypto=require('crypto'); console.log('ntk_'+crypto.randomBytes(32).toString('hex'))"

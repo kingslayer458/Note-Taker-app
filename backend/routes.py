@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from datetime import datetime
 from models import NoteCreate, NoteUpdate, NoteResponse, SyncRequest, SyncResponse
 from database import get_notes_collection
 from config import settings
+from auth import verify_api_key
 
-router = APIRouter(prefix="/api/notes", tags=["notes"])
+router = APIRouter(prefix="/api/notes", tags=["notes"], dependencies=[Depends(verify_api_key)])
 
 
 def get_collection():

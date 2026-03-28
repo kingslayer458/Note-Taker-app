@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from typing import List
-import os
 
 
 class Settings(BaseSettings):
@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     
     # Environment
     environment: str = "development"
+
+    # API Key Auth
+    api_key: str = Field(..., alias="API_KEY")
+    api_key_header: str = "x-api-key"
     
     @property
     def cors_origins_list(self) -> List[str]:

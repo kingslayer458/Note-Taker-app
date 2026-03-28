@@ -1,7 +1,31 @@
 import type { Note } from "./types"
 
 const STORAGE_KEY = "noteTaker.notes"
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+const API_URL = process.env.NEXT_PUBLIC_API_URL ||"http://localhost:8000"
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? ""
+
+function getApiUrl(path: string): string {
+  if (!API_URL) {
+    throw new Error("Missing NEXT_PUBLIC_API_URL environment variable")
+  }
+  return `${API_URL}${path}`
+}
+
+function getApiHeaders(includeContentType = false): HeadersInit {
+  if (!API_KEY) {
+    throw new Error("Missing NEXT_PUBLIC_API_KEY environment variable")
+  }
+
+  const headers: Record<string, string> = {
+    "x-api-key": API_KEY,
+  }
+
+  if (includeContentType) {
+    headers["Content-Type"] = "application/json"
+  }
+
+  return headers
+}
 
 // ============================================
 // LOCAL STORAGE FUNCTIONS
@@ -88,9 +112,9 @@ export function updateNote(updatedNote: Note): void {
  */
 export async function saveNoteToCloud(note: Note): Promise<Note | null> {
   try {
-    const response = await fetch(`${API_URL}/api/notes`, {
+    const response = await fetch(getApiUrl("/api/notes"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getApiHeaders(true),
       body: JSON.stringify({
         id: note.id,
         title: note.title,
@@ -120,9 +144,9 @@ export async function saveNoteToCloud(note: Note): Promise<Note | null> {
  */
 export async function updateNoteInCloud(note: Note): Promise<Note | null> {
   try {
-    const response = await fetch(`${API_URL}/api/notes/${note.id}`, {
+    const response = await fetch(getApiUrl(`/api/notes/${note.id}`), {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getApiHeaders(true),
       body: JSON.stringify({
         title: note.title,
         content: note.content,
@@ -146,8 +170,9 @@ export async function updateNoteInCloud(note: Note): Promise<Note | null> {
  */
 export async function deleteNoteFromCloud(id: string): Promise<boolean> {
   try {
-    const response = await fetch(`${API_URL}/api/notes/${id}`, {
+    const response = await fetch(getApiUrl(`/api/notes/${id}`), {
       method: "DELETE",
+      headers: getApiHeaders(),
     })
     
     // 204 No Content or 404 Not Found are both acceptable
@@ -163,7 +188,9 @@ export async function deleteNoteFromCloud(id: string): Promise<boolean> {
  */
 export async function getNotesFromCloud(): Promise<Note[]> {
   try {
-    const response = await fetch(`${API_URL}/api/notes`)
+    const response = await fetch(getApiUrl("/api/notes"), {
+      headers: getApiHeaders(),
+    })
     
     if (!response.ok) {
       throw new Error(`Failed to fetch notes: ${response.statusText}`)
@@ -187,9 +214,9 @@ export async function pushNotesToCloud(): Promise<{ success: boolean; message: s
       return { success: true, message: "No notes to push" }
     }
     
-    const response = await fetch(`${API_URL}/api/notes/sync`, {
+    const response = await fetch(getApiUrl("/api/notes/sync"), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getApiHeaders(true),
       body: JSON.stringify({ notes: localNotes }),
     })
     
@@ -221,9 +248,9 @@ export async function syncNotesToCloud(): Promise<{ success: boolean; message: s
     const localNotes = getNotes()
     
     if (localNotes.length > 0) {
-      const pushResponse = await fetch(`${API_URL}/api/notes/sync`, {
+      const pushResponse = await fetch(getApiUrl("/api/notes/sync"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getApiHeaders(true),
         body: JSON.stringify({ notes: localNotes }),
       })
       
@@ -328,8 +355,9 @@ export async function pullNotesFromCloud(): Promise<Note[]> {
  */
 export async function checkApiHealth(): Promise<boolean> {
   try {
-    const response = await fetch(`${API_URL}/health`, { 
+    const response = await fetch(getApiUrl("/health"), { 
       method: "GET",
+      headers: getApiHeaders(),
       signal: AbortSignal.timeout(3000) // 3 second timeout
     })
     return response.ok

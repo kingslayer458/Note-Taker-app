@@ -2,6 +2,11 @@
 
 Base URL: `http://localhost:8000`
 
+Authentication for all `/api/notes/*` endpoints:
+
+- Header: `x-api-key`
+- Value: backend `API_KEY` environment variable
+
 ---
 
 ## 📋 Table of Contents
@@ -46,7 +51,8 @@ Retrieve all notes from the database.
 
 **Request:**
 ```bash
-curl -X GET http://localhost:8000/api/notes
+curl -X GET http://localhost:8000/api/notes \
+  -H "x-api-key: "
 ```
 
 **Response:**
@@ -79,7 +85,8 @@ Retrieve a specific note by ID.
 
 **Request:**
 ```bash
-curl -X GET http://localhost:8000/api/notes/1706284800000
+curl -X GET http://localhost:8000/api/notes/1706284800000 \
+  -H "x-api-key: generated api key here"
 ```
 
 **Response (Success - 200):**
@@ -111,6 +118,7 @@ Create a new note.
 **Headers:**
 ```
 Content-Type: application/json
+x-api-key:generated api key here
 ```
 
 **Request Body:**
@@ -127,6 +135,7 @@ Content-Type: application/json
 **Request (curl):**
 ```bash
 curl -X POST http://localhost:8000/api/notes \
+  -H "x-api-key: generated api key here" \
   -H "Content-Type: application/json" \
   -d '{
     "id": "1706285000000",
@@ -166,6 +175,7 @@ Update an existing note.
 **Headers:**
 ```
 Content-Type: application/json
+x-api-key: generated api key here
 ```
 
 **Request Body:** (all fields are optional)
@@ -180,6 +190,7 @@ Content-Type: application/json
 **Request (curl):**
 ```bash
 curl -X PUT http://localhost:8000/api/notes/1706285000000 \
+  -H "x-api-key: generated api key here" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Updated Meeting Notes",
@@ -216,7 +227,8 @@ Delete a specific note by ID.
 
 **Request:**
 ```bash
-curl -X DELETE http://localhost:8000/api/notes/1706285000000
+curl -X DELETE http://localhost:8000/api/notes/1706285000000 \
+  -H "x-api-key: generated api key here"
 ```
 
 **Response (Success - 204):**
@@ -241,6 +253,7 @@ This will insert new notes and update existing ones.
 **Headers:**
 ```
 Content-Type: application/json
+x-api-key: generated api key here
 ```
 
 **Request Body:**
@@ -275,6 +288,7 @@ Content-Type: application/json
 **Request (curl):**
 ```bash
 curl -X POST http://localhost:8000/api/notes/sync \
+  -H "x-api-key: generated api key here" \
   -H "Content-Type: application/json" \
   -d '{
     "notes": [
