@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { ArrowLeft, Trash2, Pencil } from "lucide-react"
+import { ArrowLeft, Trash2, Pencil, Copy, Check } from "lucide-react"
 import { useState, useEffect } from "react"
 import type { Note } from "@/lib/types"
 import { formatDate } from "@/lib/utils"
@@ -20,6 +20,7 @@ export default function NoteView({ note, onBack, onDelete, onUpdate }: NoteViewP
   const [content, setContent] = useState(note.content)
   const [color, setColor] = useState(note.color || "#6366f1")
   const [error, setError] = useState<string | null>(null)
+   const [isCopied, setIsCopied] = useState(false)
 
   useEffect(() => {
     // Reset form when note prop changes
@@ -55,6 +56,13 @@ export default function NoteView({ note, onBack, onDelete, onUpdate }: NoteViewP
       console.error(err)
     }
   }
+    const handleCopy = async () => {
+    // const text = `${note.title}\n\n${note.content}` // disabled this for testing
+    const text = note.content
+    await navigator.clipboard.writeText(text)
+    setIsCopied(true)
+    setTimeout(() => setIsCopied(false), 2000)
+  }
 
   return (
     <div className="w-full max-w-2xl mx-auto px-0 sm:px-4">
@@ -71,6 +79,20 @@ export default function NoteView({ note, onBack, onDelete, onUpdate }: NoteViewP
           <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex gap-1 sm:gap-2">
             {!isEditing && (
               <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCopy}
+                  title={isCopied ? "Copied!" : "Copy to clipboard"}
+                  className={`h-8 w-8 sm:h-9 sm:w-9 transition-colors ${isCopied ? "text-green-600 bg-green-50 hover:bg-green-50 hover:text-green-600" : ""
+                    }`}
+                >
+                  {isCopied ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
                 <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)} title="Edit note" className="h-8 w-8 sm:h-9 sm:w-9">
                   <Pencil className="h-4 w-4" />
                 </Button>
