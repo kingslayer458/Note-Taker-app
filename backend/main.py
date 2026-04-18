@@ -29,11 +29,17 @@ async def lifespan(app: FastAPI):
 
 
 # Create FastAPI app
+# Disable docs/redoc/openapi in production to hide API schema from public
+is_production = settings.environment == "production"
+
 app = FastAPI(
     title="NoteTaker API",
     description="Backend API for NoteTaker app - saves notes to MongoDB",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    docs_url=None if is_production else "/docs",
+    redoc_url=None if is_production else "/redoc",
+    openapi_url=None if is_production else "/openapi.json",
 )
 
 # Configure CORS
@@ -52,16 +58,21 @@ app.include_router(notes_router)
 @app.get("/")
 async def root():
     """Root endpoint - API info"""
-    return {
+    response = {
         "name": "NoteTaker API",
         "version": "1.0.0",
         "status": "running",
-        "docs": "/docs",
-        "endpoints": {
+    }
+
+    # Only show docs link and endpoint details in development
+    if not is_production:
+        response["docs"] = "/docs"
+        response["endpoints"] = {
             "notes": "/api/notes",
             "sync": "/api/notes/sync"
         }
-    }
+
+    return response
 
 
 @app.get("/health")
