@@ -5,7 +5,7 @@ const API_KEY = process.env.API_KEY || ""
 
 // GET /api/health → Check backend health
 export async function GET(request: NextRequest) {
-  if (request.headers.get("x-api-key") !== API_KEY) {
+  if (!API_KEY || request.headers.get("x-api-key") !== API_KEY) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
