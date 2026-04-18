@@ -1,2 +1,3 @@
 BACKEND_URL=http://localhost:8000
 API_KEY=enter your generated key
+NEXT_PUBLIC_CLOUD_ONLY=true or false

@@ -1,6 +1,7 @@
 import type { Note } from "./types"
 
 const STORAGE_KEY = "noteTaker.notes"
+const IS_CLOUD_ONLY = process.env.NEXT_PUBLIC_CLOUD_ONLY === "true"
 
 // All cloud API calls now go through Next.js API routes (same origin).
 // The API key is added server-side — never exposed to the browser.
@@ -36,7 +37,7 @@ function decodeContent(text: string): string {
  * Fetch notes from localStorage
  */
 export function getNotes(): Note[] {
-  if (typeof window === "undefined") return []
+  if (typeof window === "undefined" || IS_CLOUD_ONLY) return []
 
   try {
     const notesJson = localStorage.getItem(STORAGE_KEY)
@@ -154,7 +155,9 @@ export async function restoreNotesFromBackup(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedNotes))
+    if (!IS_CLOUD_ONLY) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedNotes))
+    }
 
     // Attempt cloud sync but never let it cause a failure —
     // the local restore already succeeded at this point.
@@ -199,9 +202,11 @@ export function saveNote(note: Note): void {
   if (typeof window === "undefined") return
 
   try {
-    const notes = getNotes()
-    const updatedNotes = [note, ...notes]
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotes))
+    if (!IS_CLOUD_ONLY) {
+      const notes = getNotes()
+      const updatedNotes = [note, ...notes]
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotes))
+    }
     
     // Also save to backend (non-blocking)
     saveNoteToCloud(note).catch(console.error)
@@ -218,9 +223,11 @@ export function deleteNote(id: string): void {
   if (typeof window === "undefined") return
 
   try {
-    const notes = getNotes()
-    const updatedNotes = notes.filter((note) => note.id !== id)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotes))
+    if (!IS_CLOUD_ONLY) {
+      const notes = getNotes()
+      const updatedNotes = notes.filter((note) => note.id !== id)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotes))
+    }
     
     // Also delete from backend (non-blocking)
     deleteNoteFromCloud(id).catch(console.error)
@@ -237,9 +244,11 @@ export function updateNote(updatedNote: Note): void {
   if (typeof window === "undefined") return
 
   try {
-    const notes = getNotes()
-    const updatedNotes = notes.map((note) => (note.id === updatedNote.id ? updatedNote : note))
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotes))
+    if (!IS_CLOUD_ONLY) {
+      const notes = getNotes()
+      const updatedNotes = notes.map((note) => (note.id === updatedNote.id ? updatedNote : note))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotes))
+    }
     
     // Also update in backend (non-blocking)
     updateNoteInCloud(updatedNote).catch(console.error)
@@ -353,6 +362,10 @@ export async function getNotesFromCloud(): Promise<Note[]> {
  * Sync all localStorage notes to the cloud/MongoDB (push only)
  */
 export async function pushNotesToCloud(): Promise<{ success: boolean; message: string }> {
+  if (IS_CLOUD_ONLY) {
+    return { success: true, message: "Running in cloud-only mode (nothing to push)" }
+  }
+
   try {
     const localNotes = getNotes()
     
@@ -391,6 +404,24 @@ export async function pushNotesToCloud(): Promise<{ success: boolean; message: s
  * Returns the merged notes array
  */
 export async function syncNotesToCloud(): Promise<{ success: boolean; message: string; notes: Note[] }> {
+  if (IS_CLOUD_ONLY) {
+    try {
+      const cloudNotes = await getNotesFromCloud()
+      return { 
+        success: true, 
+        message: `Synced successfully! ${cloudNotes.length} notes in total`,
+        notes: cloudNotes
+      }
+    } catch (error) {
+      console.error("Error syncing notes in cloud mode:", error)
+      return { 
+        success: false, 
+        message: error instanceof Error ? error.message : "Failed to sync notes",
+        notes: []
+      }
+    }
+  }
+
   try {
     // Step 1: Push local notes to cloud
     const localNotes = getNotes()
@@ -418,7 +449,9 @@ export async function syncNotesToCloud(): Promise<{ success: boolean; message: s
       cloudNotes.sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudNotes))
+      if (!IS_CLOUD_ONLY) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudNotes))
+      }
     }
     
     return { 
@@ -443,6 +476,8 @@ export async function syncNotesToCloud(): Promise<{ success: boolean; message: s
 export async function fetchAndMergeNotes(): Promise<Note[]> {
   try {
     const cloudNotes = await getNotesFromCloud()
+    if (IS_CLOUD_ONLY) return cloudNotes
+    
     const localNotes = getNotes()
     
     // Create map for easy lookup of cloud notes
@@ -466,7 +501,9 @@ export async function fetchAndMergeNotes(): Promise<Note[]> {
     )
     
     // Update localStorage with merged notes
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedNotes))
+    if (!IS_CLOUD_ONLY) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedNotes))
+    }
     
     return mergedNotes
   } catch (error) {
@@ -490,7 +527,9 @@ export async function pullNotesFromCloud(): Promise<Note[]> {
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
       // Overwrite localStorage with cloud notes
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudNotes))
+      if (!IS_CLOUD_ONLY) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudNotes))
+      }
     }
     
     return cloudNotes
