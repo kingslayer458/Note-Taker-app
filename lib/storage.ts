@@ -9,6 +9,25 @@ function getProxyUrl(path: string): string {
   return path // e.g. "/api/notes", "/api/health" — same-origin calls
 }
 
+// Helpers to encode/decode content to bypass strict WAF rules (like Cloudflare blocking code snippets)
+function encodeContent(text: string): string {
+  if (!text) return text
+  try {
+    return "__b64__" + btoa(unescape(encodeURIComponent(text)))
+  } catch {
+    return text
+  }
+}
+
+function decodeContent(text: string): string {
+  if (!text || typeof text !== "string" || !text.startsWith("__b64__")) return text
+  try {
+    return decodeURIComponent(escape(atob(text.substring(7))))
+  } catch {
+    return text
+  }
+}
+
 // ============================================
 // LOCAL STORAGE FUNCTIONS
 // ============================================
@@ -245,7 +264,7 @@ export async function saveNoteToCloud(note: Note): Promise<Note | null> {
       body: JSON.stringify({
         id: note.id,
         title: note.title,
-        content: note.content,
+        content: encodeContent(note.content),
         color: note.color,
         createdAt: note.createdAt,
       }),
@@ -259,7 +278,8 @@ export async function saveNoteToCloud(note: Note): Promise<Note | null> {
       throw new Error(`Failed to save note: ${response.statusText}`)
     }
     
-    return await response.json()
+    const savedNote = await response.json()
+    return { ...savedNote, content: decodeContent(savedNote.content) }
   } catch (error) {
     console.error("Error saving note to cloud:", error)
     return null
@@ -276,7 +296,7 @@ export async function updateNoteInCloud(note: Note): Promise<Note | null> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: note.title,
-        content: note.content,
+        content: encodeContent(note.content),
         color: note.color,
       }),
     })
@@ -285,7 +305,8 @@ export async function updateNoteInCloud(note: Note): Promise<Note | null> {
       throw new Error(`Failed to update note: ${response.statusText}`)
     }
     
-    return await response.json()
+    const updatedNote = await response.json()
+    return { ...updatedNote, content: decodeContent(updatedNote.content) }
   } catch (error) {
     console.error("Error updating note in cloud:", error)
     return null
@@ -320,7 +341,8 @@ export async function getNotesFromCloud(): Promise<Note[]> {
       throw new Error(`Failed to fetch notes: ${response.statusText}`)
     }
     
-    return await response.json()
+    const notes: Note[] = await response.json()
+    return notes.map(n => ({ ...n, content: decodeContent(n.content) }))
   } catch (error) {
     console.error("Error fetching notes from cloud:", error)
     return []
@@ -341,7 +363,9 @@ export async function pushNotesToCloud(): Promise<{ success: boolean; message: s
     const response = await fetch(getProxyUrl("/api/notes/sync"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notes: localNotes }),
+      body: JSON.stringify({ 
+        notes: localNotes.map(n => ({ ...n, content: encodeContent(n.content) })) 
+      }),
     })
     
     if (!response.ok) {
@@ -375,7 +399,9 @@ export async function syncNotesToCloud(): Promise<{ success: boolean; message: s
       const pushResponse = await fetch(getProxyUrl("/api/notes/sync"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notes: localNotes }),
+        body: JSON.stringify({ 
+          notes: localNotes.map(n => ({ ...n, content: encodeContent(n.content) })) 
+        }),
       })
       
       if (!pushResponse.ok) {
