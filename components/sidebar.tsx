@@ -1,10 +1,11 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { PenLine, List, Moon, Sun, Menu, X, Cloud, CloudOff, RefreshCw } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { PenLine, List, Moon, Sun, Menu, X, Cloud, CloudOff, RefreshCw, Download, Upload, Database } from "lucide-react"
 import { useTheme } from "next-themes"
-import { useState, useEffect } from "react"
-import { syncNotesToCloud, checkApiHealth } from "@/lib/storage"
+import { useState, useEffect, useRef, type ChangeEvent } from "react"
+import { syncNotesToCloud, checkApiHealth, createNotesBackup, restoreNotesFromBackup } from "@/lib/storage"
 import type { Note } from "@/lib/types"
 
 interface SidebarProps {
@@ -20,6 +21,9 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
   const [isOpen, setIsOpen] = useState(false)
   const [isOnline, setIsOnline] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isBackingUp, setIsBackingUp] = useState(false)
+  const [isRestoring, setIsRestoring] = useState(false)
+  const restoreInputRef = useRef<HTMLInputElement>(null)
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -51,6 +55,67 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
       console.error(error)
     } finally {
       setIsSyncing(false)
+    }
+  }
+
+  const handleBackup = async () => {
+    setIsBackingUp(true)
+    try {
+      const result = await createNotesBackup()
+      if (!result.success || !result.data) {
+        alert(result.message)
+        return
+      }
+
+      const blob = new Blob([result.data], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      const backupDate = new Date().toISOString().split("T")[0]
+      link.href = url
+      link.download = `notes-backup-${backupDate}.json`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+
+      const online = await checkApiHealth()
+      setIsOnline(online)
+      alert(result.message)
+    } catch (error) {
+      alert("Failed to create backup")
+      console.error(error)
+    } finally {
+      setIsBackingUp(false)
+    }
+  }
+
+  const handleRestoreClick = () => {
+    restoreInputRef.current?.click()
+  }
+
+  const handleRestoreFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsRestoring(true)
+    try {
+      const backupJson = await file.text()
+      const result = await restoreNotesFromBackup(backupJson)
+
+      const online = await checkApiHealth()
+      setIsOnline(online)
+
+      if (result.success) {
+        onSyncComplete?.(result.notes)
+      }
+
+      alert(result.message)
+    } catch (error) {
+      alert("Failed to restore notes")
+      console.error(error)
+    } finally {
+      setIsRestoring(false)
+      event.target.value = ""
     }
   }
 
@@ -143,6 +208,41 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
             <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
             {isSyncing ? "Syncing..." : "Sync to Cloud"}
           </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-start py-5"
+                disabled={isBackingUp || isRestoring}
+              >
+                <Database className="mr-2 h-4 w-4" />
+                {isBackingUp
+                  ? "Creating backup..."
+                  : isRestoring
+                    ? "Restoring..."
+                    : "Backup / Restore"}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="start">
+              <DropdownMenuItem onClick={handleBackup} disabled={isBackingUp || isRestoring}>
+                <Download className="mr-2 h-4 w-4" />
+                Backup as JSON
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleRestoreClick} disabled={isBackingUp || isRestoring}>
+                <Upload className="mr-2 h-4 w-4" />
+                Restore from JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <input
+            ref={restoreInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={handleRestoreFileChange}
+          />
         </nav>
 
         {/* Cloud status indicator */}

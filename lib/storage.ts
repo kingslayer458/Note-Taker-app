@@ -46,6 +46,148 @@ export function getNotes(): Note[] {
   }
 }
 
+function normalizeBackupNote(raw: unknown): Note | null {
+  if (!raw || typeof raw !== "object") return null
+
+  const note = raw as Partial<Note>
+  const title = typeof note.title === "string" && note.title.trim().length > 0 ? note.title.trim() : "Untitled Note"
+  const content = typeof note.content === "string" ? note.content : "No content"
+  const color = typeof note.color === "string" && note.color.trim().length > 0 ? note.color : "#6366f1"
+  const createdAt = typeof note.createdAt === "string" && !Number.isNaN(Date.parse(note.createdAt))
+    ? note.createdAt
+    : new Date().toISOString()
+
+  let id = typeof note.id === "string" && note.id.trim().length > 0 ? note.id.trim() : ""
+  if (!id) {
+    id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  }
+
+  return {
+    id,
+    title,
+    content,
+    color,
+    createdAt,
+  }
+}
+
+/**
+ * Create a JSON backup string of all available notes.
+ * If backend is available, this includes merged cloud + local notes.
+ */
+export async function createNotesBackup(): Promise<{ success: boolean; data?: string; message: string }> {
+  try {
+    let notes = getNotes()
+    const isOnline = await checkApiHealth()
+
+    if (isOnline) {
+      notes = await fetchAndMergeNotes()
+    }
+
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      notes,
+    }
+
+    return {
+      success: true,
+      data: JSON.stringify(payload, null, 2),
+      message: `Backup created with ${notes.length} notes`,
+    }
+  } catch (error) {
+    console.error("Error creating backup:", error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to create backup",
+    }
+  }
+}
+
+/**
+ * Restore notes from backup JSON and persist to localStorage.
+ * Also syncs restored notes to cloud when backend is available.
+ */
+export async function restoreNotesFromBackup(
+  backupJson: string,
+): Promise<{ success: boolean; message: string; notes: Note[] }> {
+  try {
+    const parsed = JSON.parse(backupJson) as unknown
+
+    let rawNotes: unknown[] = []
+    if (Array.isArray(parsed)) {
+      rawNotes = parsed
+    } else if (
+      parsed &&
+      typeof parsed === "object" &&
+      "notes" in parsed &&
+      Array.isArray((parsed as { notes: unknown[] }).notes)
+    ) {
+      rawNotes = (parsed as { notes: unknown[] }).notes
+    } else {
+      throw new Error("Invalid backup JSON format")
+    }
+
+    const restoredNotes = rawNotes
+      .map(normalizeBackupNote)
+      .filter((note): note is Note => note !== null)
+
+    if (restoredNotes.length === 0) {
+      throw new Error("Backup file does not contain valid notes")
+    }
+
+    const existingNotes = getNotes()
+    const notesMap = new Map<string, Note>()
+
+    for (const note of existingNotes) {
+      notesMap.set(note.id, note)
+    }
+
+    for (const note of restoredNotes) {
+      notesMap.set(note.id, note)
+    }
+
+    const mergedNotes = Array.from(notesMap.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedNotes))
+
+    const isOnline = await checkApiHealth()
+    if (isOnline) {
+      const syncResult = await syncNotesToCloud()
+      if (syncResult.success) {
+        return {
+          success: true,
+          message: `Restored ${restoredNotes.length} notes and synced to cloud`,
+          notes: syncResult.notes,
+        }
+      }
+
+      return {
+        success: true,
+        message: `Restored ${restoredNotes.length} notes locally. Cloud sync failed: ${syncResult.message}`,
+        notes: mergedNotes,
+      }
+    }
+
+    return {
+      success: true,
+      message: `Restored ${restoredNotes.length} notes locally (offline mode)`,
+      notes: mergedNotes,
+    }
+  } catch (error) {
+    console.error("Error restoring backup:", error)
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Failed to restore backup",
+      notes: getNotes(),
+    }
+  }
+}
+
 /**
  * Save a new note to localStorage
  */
