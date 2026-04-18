@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-const API_KEY = process.env.API_KEY || process.env.NEXT_PUBLIC_API_KEY || ""
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000"
+const API_KEY = process.env.API_KEY || ""
 
 // GET /api/health → Check backend health
 export async function GET() {
