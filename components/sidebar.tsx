@@ -8,6 +8,8 @@ import { useState, useEffect, useRef, type ChangeEvent } from "react"
 import { syncNotesToCloud, checkApiHealth, createNotesBackup, restoreNotesFromBackup } from "@/lib/storage"
 import type { Note } from "@/lib/types"
 
+const IS_CLOUD_ONLY = process.env.NEXT_PUBLIC_CLOUD_ONLY === "true"
+
 interface SidebarProps {
   view: "list" | "add" | "view"
   setView: (view: "list" | "add" | "view") => void
@@ -25,18 +27,36 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
   const [isRestoring, setIsRestoring] = useState(false)
   const restoreInputRef = useRef<HTMLInputElement>(null)
 
-  // Prevent hydration mismatch
+  // Prevent hydration mismatch and set up health polling if offline
   useEffect(() => {
     setMounted(true)
-    // Check API health on mount
     checkApiHealth().then(setIsOnline)
   }, [])
+
+  // Auto-retry connection every 10 seconds if locked out in cloud-only mode
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (IS_CLOUD_ONLY && !isOnline && mounted) {
+      interval = setInterval(async () => {
+        const online = await checkApiHealth()
+        if (online) {
+          setIsOnline(true)
+          // Fetch notes automatically when coming back online
+          const result = await syncNotesToCloud()
+          if (result.success) onSyncComplete?.(result.notes)
+        }
+      }, 10000)
+    }
+    return () => clearInterval(interval)
+  }, [isOnline, mounted, onSyncComplete])
 
   // Close sidebar when view changes on mobile
   const handleViewChange = (newView: "list" | "add" | "view") => {
     setView(newView)
     setIsOpen(false)
   }
+
+  const isLockedOut = IS_CLOUD_ONLY && !isOnline && mounted
 
   const handleSync = async () => {
     setIsSyncing(true)
@@ -194,6 +214,7 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
             variant={view === "add" ? "default" : "ghost"}
             className="w-full justify-start py-5"
             onClick={() => handleViewChange("add")}
+            disabled={isLockedOut}
           >
             <PenLine className="mr-2 h-4 w-4" />
             New Note
@@ -203,7 +224,7 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
             variant="ghost"
             className="w-full justify-start py-5"
             onClick={handleSync}
-            disabled={isSyncing}
+            disabled={isSyncing || isLockedOut}
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
             {isSyncing ? "Syncing..." : "Sync to Cloud"}
@@ -214,7 +235,7 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
               <Button
                 variant="ghost"
                 className="w-full justify-start py-5"
-                disabled={isBackingUp || isRestoring}
+                disabled={isBackingUp || isRestoring || isLockedOut}
               >
                 <Database className="mr-2 h-4 w-4" />
                 {isBackingUp
@@ -253,10 +274,10 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
               <span>Backend connected</span>
             </>
           ) : (
-            <>
+            <div className={`flex items-center gap-2 ${IS_CLOUD_ONLY ? "animate-pulse text-red-500 font-medium" : ""}`}>
               <CloudOff className="h-3 w-3 text-red-500" />
-              <span>Offline mode</span>
-            </>
+              <span>{IS_CLOUD_ONLY ? "Server down (UI Locked)" : "Offline mode"}</span>
+            </div>
           )}
         </div>
 
