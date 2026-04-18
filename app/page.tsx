@@ -87,9 +87,13 @@ export default function Home() {
     }
   }
 
+  const handleRestoreComplete = (notes: Note[]) => {
+    setNotes(notes)
+  }
+
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar view={view} setView={setView} noteCount={notes.length} />
+      <Sidebar view={view} setView={setView} noteCount={notes.length} onRestoreComplete={handleRestoreComplete} />
 
       <main className="flex-1 overflow-auto p-4 md:p-6 pt-20 md:pt-6 w-full">
         {view === "list" && (
