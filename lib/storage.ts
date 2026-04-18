@@ -160,20 +160,42 @@ export async function restoreNotesFromBackup(
     }
 
     // Attempt cloud sync but never let it cause a failure —
-    // the local restore already succeeded at this point.
+    // the local restore already succeeded at this point (or we're trying to push directly to cloud)
     try {
       const isOnline = await checkApiHealth()
       if (isOnline) {
-        const syncResult = await syncNotesToCloud()
-        if (syncResult.success) {
-          return {
-            success: true,
-            message: `Restored ${restoredNotes.length} notes and synced to cloud`,
-            notes: syncResult.notes,
+        if (IS_CLOUD_ONLY) {
+          // In cloud-only mode, we must push the restored notes directly 
+          // because syncNotesToCloud() only fetches in this mode
+          const pushResponse = await fetch(getProxyUrl("/api/notes/sync"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              notes: restoredNotes.map(n => ({ ...n, content: encodeContent(n.content) })) 
+            }),
+          })
+          
+          if (pushResponse.ok) {
+            const cloudNotes = await getNotesFromCloud()
+            return {
+              success: true,
+              message: `Restored ${restoredNotes.length} notes directly to cloud`,
+              notes: cloudNotes,
+            }
           }
+          console.warn("Cloud push failed during restore in cloud-only mode")
+        } else {
+          const syncResult = await syncNotesToCloud()
+          if (syncResult.success) {
+            return {
+              success: true,
+              message: `Restored ${restoredNotes.length} notes and synced to cloud`,
+              notes: syncResult.notes,
+            }
+          }
+          // Cloud sync failed but local restore succeeded — don't alarm the user
+          console.warn("Cloud sync failed after restore:", syncResult.message)
         }
-        // Cloud sync failed but local restore succeeded — don't alarm the user
-        console.warn("Cloud sync failed after restore:", syncResult.message)
       }
     } catch (syncError) {
       // Network errors, API key issues, etc. — swallow them
