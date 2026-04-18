@@ -1,30 +1,12 @@
 import type { Note } from "./types"
 
 const STORAGE_KEY = "noteTaker.notes"
-const API_URL = process.env.NEXT_PUBLIC_API_URL ||"http://localhost:8000"
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? ""
 
-function getApiUrl(path: string): string {
-  if (!API_URL) {
-    throw new Error("Missing NEXT_PUBLIC_API_URL environment variable")
-  }
-  return `${API_URL}${path}`
-}
+// All cloud API calls now go through Next.js API routes (same origin).
+// The API key is added server-side — never exposed to the browser.
 
-function getApiHeaders(includeContentType = false): HeadersInit {
-  if (!API_KEY) {
-    throw new Error("Missing NEXT_PUBLIC_API_KEY environment variable")
-  }
-
-  const headers: Record<string, string> = {
-    "x-api-key": API_KEY,
-  }
-
-  if (includeContentType) {
-    headers["Content-Type"] = "application/json"
-  }
-
-  return headers
+function getProxyUrl(path: string): string {
+  return path // e.g. "/api/notes", "/api/health" — same-origin calls
 }
 
 // ============================================
@@ -249,7 +231,7 @@ export function updateNote(updatedNote: Note): void {
 }
 
 // ============================================
-// CLOUD/MONGODB API FUNCTIONS
+// CLOUD/MONGODB API FUNCTIONS (via Next.js proxy)
 // ============================================
 
 /**
@@ -257,9 +239,9 @@ export function updateNote(updatedNote: Note): void {
  */
 export async function saveNoteToCloud(note: Note): Promise<Note | null> {
   try {
-    const response = await fetch(getApiUrl("/api/notes"), {
+    const response = await fetch(getProxyUrl("/api/notes"), {
       method: "POST",
-      headers: getApiHeaders(true),
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         id: note.id,
         title: note.title,
@@ -289,9 +271,9 @@ export async function saveNoteToCloud(note: Note): Promise<Note | null> {
  */
 export async function updateNoteInCloud(note: Note): Promise<Note | null> {
   try {
-    const response = await fetch(getApiUrl(`/api/notes/${note.id}`), {
+    const response = await fetch(getProxyUrl(`/api/notes/${note.id}`), {
       method: "PUT",
-      headers: getApiHeaders(true),
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: note.title,
         content: note.content,
@@ -315,9 +297,8 @@ export async function updateNoteInCloud(note: Note): Promise<Note | null> {
  */
 export async function deleteNoteFromCloud(id: string): Promise<boolean> {
   try {
-    const response = await fetch(getApiUrl(`/api/notes/${id}`), {
+    const response = await fetch(getProxyUrl(`/api/notes/${id}`), {
       method: "DELETE",
-      headers: getApiHeaders(),
     })
     
     // 204 No Content or 404 Not Found are both acceptable
@@ -333,9 +314,7 @@ export async function deleteNoteFromCloud(id: string): Promise<boolean> {
  */
 export async function getNotesFromCloud(): Promise<Note[]> {
   try {
-    const response = await fetch(getApiUrl("/api/notes"), {
-      headers: getApiHeaders(),
-    })
+    const response = await fetch(getProxyUrl("/api/notes"))
     
     if (!response.ok) {
       throw new Error(`Failed to fetch notes: ${response.statusText}`)
@@ -359,9 +338,9 @@ export async function pushNotesToCloud(): Promise<{ success: boolean; message: s
       return { success: true, message: "No notes to push" }
     }
     
-    const response = await fetch(getApiUrl("/api/notes/sync"), {
+    const response = await fetch(getProxyUrl("/api/notes/sync"), {
       method: "POST",
-      headers: getApiHeaders(true),
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ notes: localNotes }),
     })
     
@@ -393,9 +372,9 @@ export async function syncNotesToCloud(): Promise<{ success: boolean; message: s
     const localNotes = getNotes()
     
     if (localNotes.length > 0) {
-      const pushResponse = await fetch(getApiUrl("/api/notes/sync"), {
+      const pushResponse = await fetch(getProxyUrl("/api/notes/sync"), {
         method: "POST",
-        headers: getApiHeaders(true),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notes: localNotes }),
       })
       
@@ -500,13 +479,9 @@ export async function pullNotesFromCloud(): Promise<Note[]> {
  */
 export async function checkApiHealth(): Promise<boolean> {
   try {
-    // Bail out early if env vars are missing — no point hitting the network
-    if (!API_URL || !API_KEY) return false
-
-    const response = await fetch(getApiUrl("/health"), { 
+    const response = await fetch(getProxyUrl("/api/health"), {
       method: "GET",
-      headers: getApiHeaders(),
-      signal: AbortSignal.timeout(3000) // 3 second timeout
+      signal: AbortSignal.timeout(5000) // 5 second timeout (proxy adds latency)
     })
     return response.ok
   } catch {
