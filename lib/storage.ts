@@ -155,27 +155,30 @@ export async function restoreNotesFromBackup(
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedNotes))
 
-    const isOnline = await checkApiHealth()
-    if (isOnline) {
-      const syncResult = await syncNotesToCloud()
-      if (syncResult.success) {
-        return {
-          success: true,
-          message: `Restored ${restoredNotes.length} notes and synced to cloud`,
-          notes: syncResult.notes,
+    // Attempt cloud sync but never let it cause a failure —
+    // the local restore already succeeded at this point.
+    try {
+      const isOnline = await checkApiHealth()
+      if (isOnline) {
+        const syncResult = await syncNotesToCloud()
+        if (syncResult.success) {
+          return {
+            success: true,
+            message: `Restored ${restoredNotes.length} notes and synced to cloud`,
+            notes: syncResult.notes,
+          }
         }
+        // Cloud sync failed but local restore succeeded — don't alarm the user
+        console.warn("Cloud sync failed after restore:", syncResult.message)
       }
-
-      return {
-        success: true,
-        message: `Restored ${restoredNotes.length} notes locally. Cloud sync failed: ${syncResult.message}`,
-        notes: mergedNotes,
-      }
+    } catch (syncError) {
+      // Network errors, API key issues, etc. — swallow them
+      console.warn("Cloud sync skipped during restore:", syncError)
     }
 
     return {
       success: true,
-      message: `Restored ${restoredNotes.length} notes locally (offline mode)`,
+      message: `Restored ${restoredNotes.length} notes successfully`,
       notes: mergedNotes,
     }
   } catch (error) {
@@ -497,6 +500,9 @@ export async function pullNotesFromCloud(): Promise<Note[]> {
  */
 export async function checkApiHealth(): Promise<boolean> {
   try {
+    // Bail out early if env vars are missing — no point hitting the network
+    if (!API_URL || !API_KEY) return false
+
     const response = await fetch(getApiUrl("/health"), { 
       method: "GET",
       headers: getApiHeaders(),
