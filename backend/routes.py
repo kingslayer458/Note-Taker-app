@@ -31,27 +31,6 @@ async def get_all_notes():
     return notes
 
 
-@router.get("/{note_id}", response_model=NoteResponse)
-async def get_note(note_id: str):
-    """Get a single note by ID"""
-    collection = get_collection()
-    note = await collection.find_one({"_id": note_id})
-    
-    if not note:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Note with id {note_id} not found"
-        )
-    
-    return NoteResponse(
-        id=note["_id"],
-        title=note["title"],
-        content=note["content"],
-        color=note.get("color", "#6366f1"),
-        createdAt=note["createdAt"]
-    )
-
-
 @router.post("/", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
 async def create_note(note: NoteCreate):
     """Create a new note"""
@@ -82,6 +61,70 @@ async def create_note(note: NoteCreate):
         content=note_doc["content"],
         color=note_doc["color"],
         createdAt=note_doc["createdAt"]
+    )
+
+@router.post("/sync", response_model=SyncResponse)
+async def sync_notes(sync_request: SyncRequest):
+    """
+    Sync notes from client localStorage to MongoDB.
+    This will upsert all notes (insert if new, update if exists).
+    """
+    collection = get_collection()
+    synced_count = 0
+    synced_notes = []
+    
+    for note in sync_request.notes:
+        note_doc = {
+            "_id": note.id,
+            "title": note.title,
+            "content": note.content,
+            "color": note.color,
+            "createdAt": note.created_at,
+            "syncedAt": datetime.utcnow()
+        }
+        
+        # Upsert: update if exists, insert if not
+        await collection.update_one(
+            {"_id": note.id},
+            {"$set": note_doc},
+            upsert=True
+        )
+        
+        synced_count += 1
+        synced_notes.append(NoteResponse(
+            id=note_doc["_id"],
+            title=note_doc["title"],
+            content=note_doc["content"],
+            color=note_doc["color"],
+            createdAt=note_doc["createdAt"]
+        ))
+    
+    return SyncResponse(
+        success=True,
+        synced_count=synced_count,
+        notes=synced_notes,
+        message=f"Successfully synced {synced_count} notes"
+    )
+
+
+@router.get("/{note_id}", response_model=NoteResponse)
+async def get_note(note_id: str):
+    """Get a single note by ID"""
+    collection = get_collection()
+    note = await collection.find_one({"_id": note_id})
+    
+    if not note:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Note with id {note_id} not found"
+        )
+    
+    return NoteResponse(
+        id=note["_id"],
+        title=note["title"],
+        content=note["content"],
+        color=note.get("color", "#6366f1"),
+        createdAt=note["createdAt"]
     )
 
 
@@ -138,50 +181,6 @@ async def delete_note(note_id: str):
         )
     
     return None
-
-
-@router.post("/sync", response_model=SyncResponse)
-async def sync_notes(sync_request: SyncRequest):
-    """
-    Sync notes from client localStorage to MongoDB.
-    This will upsert all notes (insert if new, update if exists).
-    """
-    collection = get_collection()
-    synced_count = 0
-    synced_notes = []
-    
-    for note in sync_request.notes:
-        note_doc = {
-            "_id": note.id,
-            "title": note.title,
-            "content": note.content,
-            "color": note.color,
-            "createdAt": note.created_at,
-            "syncedAt": datetime.utcnow()
-        }
-        
-        # Upsert: update if exists, insert if not
-        await collection.update_one(
-            {"_id": note.id},
-            {"$set": note_doc},
-            upsert=True
-        )
-        
-        synced_count += 1
-        synced_notes.append(NoteResponse(
-            id=note_doc["_id"],
-            title=note_doc["title"],
-            content=note_doc["content"],
-            color=note_doc["color"],
-            createdAt=note_doc["createdAt"]
-        ))
-    
-    return SyncResponse(
-        success=True,
-        synced_count=synced_count,
-        notes=synced_notes,
-        message=f"Successfully synced {synced_count} notes"
-    )
 
 
 @router.delete("/", status_code=status.HTTP_200_OK)
