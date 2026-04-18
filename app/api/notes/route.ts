@@ -14,7 +14,11 @@ function getBackendHeaders(includeContentType = false): Record<string, string> {
 }
 
 // GET /api/notes → Fetch all notes from backend
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (request.headers.get("x-api-key") !== API_KEY) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
     const response = await fetch(`${BACKEND_URL}/api/notes`, {
       method: "GET",
@@ -41,6 +45,10 @@ export async function GET() {
 
 // POST /api/notes → Create a new note in backend
 export async function POST(request: NextRequest) {
+  if (request.headers.get("x-api-key") !== API_KEY) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
 

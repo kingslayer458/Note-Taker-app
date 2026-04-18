@@ -1,10 +1,14 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000"
 const API_KEY = process.env.API_KEY || ""
 
 // GET /api/health → Check backend health
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (request.headers.get("x-api-key") !== API_KEY) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
     if (!BACKEND_URL || !API_KEY) {
       return NextResponse.json(

@@ -15,6 +15,10 @@ function getBackendHeaders(includeContentType = false): Record<string, string> {
 
 // POST /api/notes/sync → Sync notes to backend
 export async function POST(request: NextRequest) {
+  if (request.headers.get("x-api-key") !== API_KEY) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
 

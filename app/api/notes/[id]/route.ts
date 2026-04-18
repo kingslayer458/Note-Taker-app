@@ -18,6 +18,10 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (request.headers.get("x-api-key") !== API_KEY) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
     const { id } = await params
     const body = await request.json()
@@ -46,9 +50,13 @@ export async function PUT(
 
 // DELETE /api/notes/[id] → Delete a note
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (request.headers.get("x-api-key") !== API_KEY) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
     const { id } = await params
 
