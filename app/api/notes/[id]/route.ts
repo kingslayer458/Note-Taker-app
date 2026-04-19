@@ -18,8 +18,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!API_KEY || request.headers.get("x-api-key") !== API_KEY) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!API_KEY) {
+    return NextResponse.json({ error: "Server Configuration Error: API_KEY missing" }, { status: 500 })
   }
 
   try {
@@ -53,8 +53,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!API_KEY || request.headers.get("x-api-key") !== API_KEY) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!API_KEY) {
+    return NextResponse.json({ error: "Server Configuration Error: API_KEY missing" }, { status: 500 })
   }
 
   try {

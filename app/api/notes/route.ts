@@ -15,8 +15,8 @@ function getBackendHeaders(includeContentType = false): Record<string, string> {
 
 // GET /api/notes → Fetch all notes from backend
 export async function GET(request: NextRequest) {
-  if (!API_KEY || request.headers.get("x-api-key") !== API_KEY) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!API_KEY) {
+    return NextResponse.json({ error: "Server Configuration Error: API_KEY missing" }, { status: 500 })
   }
 
   try {
@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
 
 // POST /api/notes → Create a new note in backend
 export async function POST(request: NextRequest) {
-  if (!API_KEY || request.headers.get("x-api-key") !== API_KEY) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!API_KEY) {
+    return NextResponse.json({ error: "Server Configuration Error: API_KEY missing" }, { status: 500 })
   }
 
   try {
