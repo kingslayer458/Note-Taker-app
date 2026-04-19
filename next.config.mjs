@@ -12,6 +12,7 @@ const nextConfig = {
   env: {
     API_KEY: process.env.API_KEY,
   },
+  output: "standalone",
 }
 
 export default nextConfig
