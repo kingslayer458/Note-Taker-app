@@ -1,0 +1,15 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+!.env.example
+env.txt
+.git
+.gitignore
+README.md
+API_DOCUMENTATION.md
+SAMPLE_POST_PAYLOAD.txt
+Dockerfile
+.dockerignore
