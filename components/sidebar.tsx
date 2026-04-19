@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { PenLine, List, Moon, Sun, Menu, X, Cloud, CloudOff, RefreshCw, Download, Upload, Database } from "lucide-react"
+import { PenLine, List, Moon, Sun, Menu, X, Cloud, CloudOff, RefreshCw, Download, Upload, Database, LogOut } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, useEffect, useRef, type ChangeEvent } from "react"
 import { syncNotesToCloud, checkApiHealth, createNotesBackup, restoreNotesFromBackup } from "@/lib/storage"
@@ -139,6 +139,15 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
     }
   }
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" })
+      window.location.reload()
+    } catch (error) {
+      console.error("Failed to log out:", error)
+    }
+  }
+
   return (
     <>
       {/* Mobile Header */}
@@ -155,6 +164,15 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            aria-label="Lock Vault"
+            className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+          >
+            <LogOut className="h-5 w-5" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -281,26 +299,38 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
           )}
         </div>
 
-        {/* Dark mode toggle - only visible on desktop sidebar */}
+        {/* Desktop Footer Actions */}
         {mounted && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="hidden md:flex"
-          >
-            {theme === "dark" ? (
-              <>
-                <Sun className="h-4 w-4 mr-2" />
-                Light Mode
-              </>
-            ) : (
-              <>
-                <Moon className="h-4 w-4 mr-2" />
-                Dark Mode
-              </>
-            )}
-          </Button>
+          <div className="hidden md:flex flex-col gap-2 mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-500/10 border-red-500/20"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Lock Vault
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="w-full justify-start"
+            >
+              {theme === "dark" ? (
+                <>
+                  <Sun className="h-4 w-4 mr-2" />
+                  Light Mode
+                </>
+              ) : (
+                <>
+                  <Moon className="h-4 w-4 mr-2" />
+                  Dark Mode
+                </>
+              )}
+            </Button>
+          </div>
         )}
       </div>
     </>
