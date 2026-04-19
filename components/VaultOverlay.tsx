@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 // ============================================
 // Confetti Particles (Google Antigravity style)
@@ -102,6 +103,7 @@ export default function VaultOverlay({ children }: { children: React.ReactNode }
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     // Check if we are already authenticated
@@ -176,15 +178,24 @@ export default function VaultOverlay({ children }: { children: React.ReactNode }
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
-            <div>
+            <div className="relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password..."
-                className="w-full px-4 py-3 bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
+                className="w-full px-4 py-3 pr-11 bg-secondary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring text-foreground"
                 autoFocus
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                onMouseDown={(e) => e.preventDefault()}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                tabIndex={-1}
+              >
+                {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+              </button>
             </div>
 
             {error && <p className="text-destructive text-sm text-center">{error}</p>}
