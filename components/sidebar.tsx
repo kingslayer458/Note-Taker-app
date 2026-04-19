@@ -152,7 +152,7 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
     <>
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-border px-4 py-3 flex items-center justify-between">
-        <h1 className="text-xl font-bold">NoteTaker</h1>
+        <h1 className="text-xl font-bold">King Note</h1>
         <div className="flex items-center gap-2">
           {mounted && (
             <Button
@@ -206,7 +206,7 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
         `}
       >
         <div className="hidden md:flex items-center justify-center mb-6 mt-2">
-          <h1 className="text-2xl font-bold">NoteTaker</h1>
+          <h1 className="text-2xl font-bold">King Note</h1>
         </div>
 
         <nav className="space-y-3 flex-1 mt-2">

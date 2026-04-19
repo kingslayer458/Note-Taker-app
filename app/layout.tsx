@@ -8,9 +8,8 @@ import VaultOverlay from "@/components/VaultOverlay"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "NoteTaker App",
-  description: "A simple note-taking application",
-  generator: "v0.dev",
+  title: "King Note",
+  description: "Your secure, personal note-taking companion",
 }
 
 export default function RootLayout({
