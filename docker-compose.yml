@@ -25,7 +25,7 @@ services:
     container_name: note_frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "6000:6000"
     env_file:
       - .env
     environment:
@@ -36,6 +36,23 @@ services:
         condition: service_healthy
     networks:
       - note_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+    networks:
+     - note_network 
 
 networks:
   note_network:
