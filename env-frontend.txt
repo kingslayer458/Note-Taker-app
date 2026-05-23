@@ -1,4 +1,14 @@
+Inside Docker Compose: http://note_backend:8000 (Uses invisible internal network)
+Outside Docker (Local): http://localhost:8000
+Outside Docker (Vercel/Live): https://your_domain.com
+
+
 BACKEND_URL=http://localhost:8000
 API_KEY=enter your generated key
 NEXT_PUBLIC_CLOUD_ONLY=true or false
 FRONTEND_PASSWORD=
+
+
+since its proxy architecture inside the docker  
+the env should be like this 
+ BACKEND_URL=http://note_backend:8000

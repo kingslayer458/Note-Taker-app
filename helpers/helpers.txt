@@ -5,3 +5,20 @@ docker compose -f docker-compose.default.yml up -d --build
 docker compose -f docker-compose.default.yml down
 
 in backend .env put environment to development
+
+
+direct image version
+
+docker compose -f docker-compose.image.yml up
+docker compose -f docker-compose.image.yml up -d --build
+docker compose -f docker-compose.image.yml down
+
+
+docker hub guide 
+
+docker tag note-taker-app-backend:latest kingslayerone/note-taker-app-backend:latest
+docker tag note-taker-app-frontend:latest kingslayerone/note-taker-app-frontend:latest
+
+
+docker push kingslayerone/note-taker-app-backend:latest
+docker push kingslayerone/note-taker-app-frontend:latest
