@@ -25,12 +25,21 @@ const PRESET_COLORS = [
   { name: "Slate", value: "#475569" },
 ]
 
+const ICON_CATEGORIES = [
+  { name: "All", keywords: [] },
+  { name: "Cloud & DevOps", keywords: ["cloud", "aws", "gcp", "azure", "docker", "kubernetes", "linux", "ubuntu", "server", "terminal", "powershell", "cloudflare"] },
+  { name: "Programming", keywords: ["code", "dev", "java", "python", "golang", "js", "ts", "javascript", "react", "node", "sql", "db", "mongo", "django", "studio"] },
+  { name: "Design", keywords: ["adobe", "figma", "sketch", "draw", "photo", "creative", "design"] },
+  { name: "Gaming", keywords: ["game", "steam", "xbox", "playstation", "nintendo", "minecraft", "epic", "godot"] },
+]
+
 export default function FolderDialog({ isOpen, initialData, onClose, onSubmit }: FolderDialogProps) {
   const [folderName, setFolderName] = useState("")
   const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0].value)
   const [selectedIconUrl, setSelectedIconUrl] = useState<string | undefined>(undefined)
   const [icons, setIcons] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState("")
+  const [activeCategory, setActiveCategory] = useState("All")
   const [isLoadingIcons, setIsLoadingIcons] = useState(false)
 
   useEffect(() => {
@@ -48,10 +57,23 @@ export default function FolderDialog({ isOpen, initialData, onClose, onSubmit }:
       // Fetch icons if we haven't already
       if (icons.length === 0) {
         setIsLoadingIcons(true)
-        fetch("https://raw.githubusercontent.com/icon11-community/Folder-Ico/main/Folder11.json")
-          .then(res => res.json())
-          .then(data => {
-            if (data && data.icons) setIcons(data.icons)
+        Promise.all([
+          fetch("https://raw.githubusercontent.com/icon11-community/Folder-Ico/main/Folder11.json").then(res => res.json()).catch(() => ({ icons: [] })),
+          fetch("https://raw.githubusercontent.com/devicons/devicon/master/devicon.json").then(res => res.json()).catch(() => [])
+        ])
+          .then(([folderData, deviconData]) => {
+            let combinedIcons: any[] = []
+            if (folderData && folderData.icons) {
+              combinedIcons = [...folderData.icons]
+            }
+            if (deviconData && Array.isArray(deviconData)) {
+              const devIcons = deviconData.map((d: any) => ({
+                name: d.name,
+                url_icon: `https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/${d.name}/${d.name}-${d.versions.svg[0]}.svg`
+              }))
+              combinedIcons = [...combinedIcons, ...devIcons]
+            }
+            setIcons(combinedIcons)
           })
           .catch(err => console.error("Failed to load icons:", err))
           .finally(() => setIsLoadingIcons(false))
@@ -66,9 +88,17 @@ export default function FolderDialog({ isOpen, initialData, onClose, onSubmit }:
     }
   }
 
-  const filteredIcons = icons.filter(icon => 
-    icon.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ).slice(0, 100) // limit to 100 to prevent severe UI lag
+  const filteredIcons = icons.filter(icon => {
+    const matchesSearch = icon.name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (activeCategory === "All") return matchesSearch;
+    
+    const category = ICON_CATEGORIES.find(c => c.name === activeCategory);
+    if (!category) return matchesSearch;
+    
+    const matchesCategory = category.keywords.some(kw => icon.name.toLowerCase().includes(kw));
+    return matchesSearch && matchesCategory;
+  }).slice(0, 100) // limit to 100 to prevent severe UI lag
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -135,6 +165,21 @@ export default function FolderDialog({ isOpen, initialData, onClose, onSubmit }:
                       Clear Icon
                     </Button>
                   )}
+                </div>
+                
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                  {ICON_CATEGORIES.map(cat => (
+                    <Button 
+                      key={cat.name} 
+                      type="button" 
+                      variant={activeCategory === cat.name ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setActiveCategory(cat.name)}
+                      className="whitespace-nowrap rounded-full text-xs h-7 px-3"
+                    >
+                      {cat.name}
+                    </Button>
+                  ))}
                 </div>
                 
                 {isLoadingIcons ? (
