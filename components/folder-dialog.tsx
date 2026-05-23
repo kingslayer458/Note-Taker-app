@@ -33,6 +33,18 @@ const ICON_CATEGORIES = [
   { name: "Gaming", keywords: ["game", "steam", "xbox", "playstation", "nintendo", "minecraft", "epic", "godot"] },
 ]
 
+const PREMIUM_SKILL_ICONS = [
+  "aws", "gcp", "azure", "cloudflare", "docker", "kubernetes", "linux", "ubuntu", "debian", "redhat", "apple", "windows", "nginx", "jenkins", "git", "github", "gitlab", "bitbucket",
+  "python", "javascript", "typescript", "java", "cpp", "c", "cs", "go", "rust", "ruby", "php", "swift", "kotlin", "dart", "lua",
+  "react", "nextjs", "vue", "nuxtjs", "angular", "svelte", "tailwind", "sass", "css", "html", "bootstrap", "materialui",
+  "nodejs", "express", "django", "flask", "spring", "laravel", "dotnet", "nestjs",
+  "mysql", "postgres", "mongodb", "redis", "sqlite", "cassandra", "prisma", "supabase", "firebase",
+  "figma", "ps", "ai", "pr", "ae", "xd", "discord", "vscode", "vim", "neovim", "idea", "androidstudio", "unity", "unreal", "godot", "blender"
+].map(skill => ({
+  name: `Premium Glass ${skill} Logo`,
+  url_icon: `https://skillicons.dev/icons?i=${skill}`
+}));
+
 export default function FolderDialog({ isOpen, initialData, onClose, onSubmit }: FolderDialogProps) {
   const [folderName, setFolderName] = useState("")
   const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0].value)
@@ -62,9 +74,9 @@ export default function FolderDialog({ isOpen, initialData, onClose, onSubmit }:
           fetch("https://raw.githubusercontent.com/devicons/devicon/master/devicon.json").then(res => res.json()).catch(() => [])
         ])
           .then(([folderData, deviconData]) => {
-            let combinedIcons: any[] = []
+            let combinedIcons: any[] = [...PREMIUM_SKILL_ICONS]
             if (folderData && folderData.icons) {
-              combinedIcons = [...folderData.icons]
+              combinedIcons = [...combinedIcons, ...folderData.icons]
             }
             if (deviconData && Array.isArray(deviconData)) {
               const devIcons = deviconData.map((d: any) => ({
