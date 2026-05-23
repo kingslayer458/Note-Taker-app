@@ -1,3 +1,11 @@
+a full-stack Note-Taking application with a Next.js frontend (React 19, Tailwind CSS)
+and a FastAPI backend (Python) connected to MongoDB. The app supports two-way sync between
+browser localStorage and cloud database - notes created locally automatically sync to MongoDB,
+and changes made directly in the database sync back to the frontend.
+The responsive UI includes dark/light mode, color-coded notes, and a mobile-friendly sidebar.
+The backend exposes a REST API with CRUD operations, bulk sync, and health checks, 
+ready for deployment on platforms like Render (backend) and Vercel (frontend).
+
 to run this without nginx guide
 
 docker compose -f docker-compose.default.yml up
