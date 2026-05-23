@@ -41,3 +41,7 @@ def get_database(database_name: str):
 def get_notes_collection(database_name: str):
     """Get notes collection"""
     return get_database(database_name)["notes"]
+
+def get_folders_collection(database_name: str):
+    """Get folders collection"""
+    return get_database(database_name)["folders"]

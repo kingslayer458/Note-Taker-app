@@ -537,6 +537,85 @@ testAPI();
 
 ---
 
+## 📁 Folder Automation Endpoints
+
+You can automate folder creation and management using the following REST endpoints. All requests must include the `x-api-key` header for authentication.
+
+### 1. Get All Folders
+Retrieve all folders from the database, ordered by creation date (newest first).
+
+**Endpoint:** `GET /api/folders/`
+
+**Request:**
+```bash
+curl -X GET http://localhost:8000/api/folders/ \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+**Response (200 OK):**
+```json
+[
+  {
+    "id": "e2c3d4e5-f6g7-8h9i",
+    "name": "Work Projects",
+    "color": "#6366f1",
+    "createdAt": "2024-05-23T10:00:00.000Z"
+  }
+]
+```
+
+### 2. Create Folder
+Create a new folder with a specific name and optional color.
+
+**Endpoint:** `POST /api/folders/`
+
+**Request:**
+```bash
+curl -X POST http://localhost:8000/api/folders/ \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "e2c3d4e5-f6g7-8h9i",
+    "name": "Work Projects",
+    "color": "#6366f1",
+    "createdAt": "2024-05-23T10:00:00.000Z"
+  }'
+```
+
+**Response (201 Created):** Returns the created folder object.
+
+### 3. Update Folder
+Update an existing folder's name or color.
+
+**Endpoint:** `PUT /api/folders/{folder_id}`
+
+**Request:**
+```bash
+curl -X PUT http://localhost:8000/api/folders/e2c3d4e5-f6g7-8h9i \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Archived Work",
+    "color": "#f59e0b"
+  }'
+```
+
+**Response (200 OK):** Returns the updated folder object.
+
+### 4. Delete Folder
+Delete a folder from the database. Note: This only deletes the folder object; you will need to separately update/remove the `folder_id` on any associated notes.
+
+**Endpoint:** `DELETE /api/folders/{folder_id}`
+
+**Request:**
+```bash
+curl -X DELETE http://localhost:8000/api/folders/e2c3d4e5-f6g7-8h9i \
+  -H "x-api-key: YOUR_API_KEY"
+```
+
+**Response:** `204 No Content` on successful deletion.
+
+---
 ## ⚠️ Error Responses
 
 All error responses follow this format:

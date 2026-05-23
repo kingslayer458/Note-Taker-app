@@ -7,6 +7,7 @@ import logging
 from config import settings
 from database import connect_to_mongo, close_mongo_connection, get_database
 from routes import router as notes_router
+from folder_routes import router as folders_router
 
 # Configure logging
 logging.basicConfig(
@@ -53,6 +54,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(notes_router)
+app.include_router(folders_router)
 
 
 @app.get("/")

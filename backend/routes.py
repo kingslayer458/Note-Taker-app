@@ -25,7 +25,8 @@ async def get_all_notes():
             title=note["title"],
             content=note["content"],
             color=note.get("color", "#6366f1"),
-            createdAt=note["createdAt"]
+            createdAt=note["createdAt"],
+            folder_id=note.get("folder_id")
         ))
     
     return notes
@@ -49,6 +50,7 @@ async def create_note(note: NoteCreate):
         "title": note.title,
         "content": note.content,
         "color": note.color,
+        "folder_id": note.folder_id,
         "createdAt": note.created_at,
         "syncedAt": datetime.utcnow()
     }
@@ -60,7 +62,8 @@ async def create_note(note: NoteCreate):
         title=note_doc["title"],
         content=note_doc["content"],
         color=note_doc["color"],
-        createdAt=note_doc["createdAt"]
+        createdAt=note_doc["createdAt"],
+        folder_id=note_doc.get("folder_id")
     )
 
 @router.post("/sync", response_model=SyncResponse)
@@ -79,6 +82,7 @@ async def sync_notes(sync_request: SyncRequest):
             "title": note.title,
             "content": note.content,
             "color": note.color,
+            "folder_id": note.folder_id,
             "createdAt": note.created_at,
             "syncedAt": datetime.utcnow()
         }
@@ -96,13 +100,15 @@ async def sync_notes(sync_request: SyncRequest):
             title=note_doc["title"],
             content=note_doc["content"],
             color=note_doc["color"],
-            createdAt=note_doc["createdAt"]
+            createdAt=note_doc["createdAt"],
+            folder_id=note_doc.get("folder_id")
         ))
     
     return SyncResponse(
         success=True,
         synced_count=synced_count,
         notes=synced_notes,
+        folders=[], # Returning empty folders for now if not synced
         message=f"Successfully synced {synced_count} notes"
     )
 
@@ -124,7 +130,8 @@ async def get_note(note_id: str):
         title=note["title"],
         content=note["content"],
         color=note.get("color", "#6366f1"),
-        createdAt=note["createdAt"]
+        createdAt=note["createdAt"],
+        folder_id=note.get("folder_id")
     )
 
 
@@ -149,6 +156,12 @@ async def update_note(note_id: str, note_update: NoteUpdate):
         update_data["content"] = note_update.content
     if note_update.color is not None:
         update_data["color"] = note_update.color
+    if hasattr(note_update, "folder_id") and note_update.folder_id is not None:
+        update_data["folder_id"] = note_update.folder_id
+    # Note: If folder_id is explicitly sent as null to remove from folder, we need to handle it.
+    # In Pydantic, if a field is unset it's not in __fields_set__.
+    if "folder_id" in note_update.model_dump(exclude_unset=True):
+        update_data["folder_id"] = note_update.folder_id
     
     await collection.update_one(
         {"_id": note_id},
@@ -163,7 +176,8 @@ async def update_note(note_id: str, note_update: NoteUpdate):
         title=updated_note["title"],
         content=updated_note["content"],
         color=updated_note.get("color", "#6366f1"),
-        createdAt=updated_note["createdAt"]
+        createdAt=updated_note["createdAt"],
+        folder_id=updated_note.get("folder_id")
     )
 
 
