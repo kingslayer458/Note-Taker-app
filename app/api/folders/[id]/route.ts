@@ -16,14 +16,15 @@ function getBackendHeaders(includeContentType = false): Record<string, string> {
 // DELETE /api/folders/[id] → Delete a folder in backend
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!API_KEY) {
     return NextResponse.json({ error: "Server Configuration Error: API_KEY missing" }, { status: 500 })
   }
 
   try {
-    const response = await fetch(`${BACKEND_URL}/api/folders/${params.id}`, {
+    const { id } = await params;
+    const response = await fetch(`${BACKEND_URL}/api/folders/${id}`, {
       method: "DELETE",
       headers: getBackendHeaders(),
     })
@@ -51,16 +52,17 @@ export async function DELETE(
 // PUT /api/folders/[id] → Update folder in backend
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!API_KEY) {
     return NextResponse.json({ error: "Server Configuration Error: API_KEY missing" }, { status: 500 })
   }
 
   try {
+    const { id } = await params;
     const body = await request.json()
 
-    const response = await fetch(`${BACKEND_URL}/api/folders/${params.id}`, {
+    const response = await fetch(`${BACKEND_URL}/api/folders/${id}`, {
       method: "PUT",
       headers: getBackendHeaders(true),
       body: JSON.stringify(body),
