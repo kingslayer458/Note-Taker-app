@@ -5,8 +5,8 @@ import type React from "react"
 import { Input } from "@/components/ui/input"
 import { Search, ArrowLeft, Trash2, Pencil, Folder as FolderIcon } from "lucide-react"
 
-const PremiumFolderIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} xmlns="http://www.w3.org/2000/svg">
+export const PremiumFolderIcon = ({ className, style }: { className?: string, style?: React.CSSProperties }) => (
+  <svg viewBox="0 0 100 100" className={className} style={style} xmlns="http://www.w3.org/2000/svg">
     <path d="M12 28C12 23.5817 15.5817 20 20 20H37.1716C39.2933 20 41.328 20.8429 42.8284 22.3431L48.1716 27.6569C49.672 29.1571 51.7067 30 53.8284 30H80C84.4183 30 88 33.5817 88 38V80C88 84.4183 84.4183 88 80 88H20C15.5817 88 12 84.4183 12 80V28Z" fill="currentColor" fillOpacity="0.5"/>
     <path d="M10 42C10 37.5817 13.5817 34 18 34H82C86.4183 34 90 37.5817 90 42V80C90 84.4183 86.4183 88 82 88H18C13.5817 88 10 84.4183 10 80V42Z" fill="currentColor" fillOpacity="0.95"/>
     <path d="M18 34H82C86.4183 34 90 37.5817 90 42V44C90 39.5817 86.4183 36 82 36H18C13.5817 36 10 39.5817 10 44V42C10 37.5817 13.5817 34 18 34Z" fill="#ffffff" fillOpacity="0.5"/>
@@ -128,28 +128,32 @@ export default function NotesList({
             return (
               <Card
                 key={folder.id}
-                className="h-[220px] cursor-pointer overflow-hidden border border-border/50 hover:shadow-md transition-all duration-300 hover:-translate-y-1 active:scale-[0.98] relative flex flex-col justify-center items-center group"
-                style={{ 
-                  background: `linear-gradient(135deg, ${bgColor}15 0%, transparent 60%)`,
-                  borderColor: `${bgColor}20`
-                }}
+                className="h-[220px] cursor-pointer overflow-hidden transition-all duration-200 active:scale-[0.98] relative flex flex-col justify-center items-center group bg-transparent border-0 shadow-none hover:bg-accent/30"
                 onClick={() => onFolderClick?.(folder.id)}
               >
-                <div 
-                  className="absolute top-0 left-0 w-full h-[2px] opacity-50 group-hover:opacity-100 transition-opacity" 
-                  style={{ background: `linear-gradient(90deg, ${bgColor}, transparent)` }} 
-                />
-                <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-                  <div className="p-4 rounded-full mb-4 shadow-sm backdrop-blur-sm transition-transform group-hover:scale-110" style={{ backgroundColor: `${bgColor}15` }}>
-                    <PremiumFolderIcon className="h-12 w-12" style={{ color: bgColor }} />
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center w-full h-full">
+                  <div className="flex-1 w-full flex items-center justify-center mb-1 mt-1">
+                    {folder.icon_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img 
+                        src={folder.icon_url} 
+                        alt="Folder icon" 
+                        className="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300" 
+                      />
+                    ) : (
+                      <PremiumFolderIcon 
+                        className="w-24 h-24 sm:w-28 sm:h-28 drop-shadow-xl group-hover:scale-110 transition-transform duration-300" 
+                        style={{ color: bgColor }} 
+                      />
+                    )}
                   </div>
-                  <h3 className="font-bold text-lg line-clamp-2 text-foreground">{folder.name}</h3>
-                  <p className="text-sm mt-2 text-muted-foreground font-medium">
+                  <h3 className="font-bold text-lg sm:text-xl line-clamp-1 text-foreground">{folder.name}</h3>
+                  <p className="text-sm text-muted-foreground font-medium mb-1">
                     {notes.filter(n => n.folder_id === folder.id).length} notes
                   </p>
                 </CardContent>
               {(onDeleteFolder || onEditFolder) && (
-                <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute bottom-2 right-2 flex gap-1 transition-opacity opacity-0 group-hover:opacity-100">
                   {onEditFolder && (
                     <Button
                       variant="ghost"
@@ -158,8 +162,7 @@ export default function NotesList({
                         e.stopPropagation()
                         onEditFolder(folder)
                       }}
-                      className="h-8 w-8 hover:bg-black/5 dark:hover:bg-white/10"
-                      style={{ color: bgColor }}
+                      className="h-8 w-8 text-foreground/70 hover:text-foreground hover:bg-accent"
                       title="Edit folder"
                     >
                       <Pencil className="h-4 w-4" />
@@ -173,7 +176,7 @@ export default function NotesList({
                         e.stopPropagation()
                         onDeleteFolder(folder.id)
                       }}
-                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
                       title="Delete folder"
                     >
                       <Trash2 className="h-4 w-4" />

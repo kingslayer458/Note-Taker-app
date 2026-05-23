@@ -632,12 +632,13 @@ export async function getFoldersFromCloud(): Promise<import("./types").Folder[]>
   }
 }
 
-export async function createFolderInCloud(name: string, color: string = "#fef3c7"): Promise<import("./types").Folder | null> {
+export async function createFolderInCloud(name: string, color: string = "#fef3c7", icon_url?: string): Promise<import("./types").Folder | null> {
   const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`
     
-  const folder = { id, name, color, createdAt: new Date().toISOString() }
+  const folder: any = { id, name, color, createdAt: new Date().toISOString() }
+  if (icon_url) folder.icon_url = icon_url
 
   if (!IS_CLOUD_ONLY) {
     const localFolders = getFoldersLocally()
@@ -687,7 +688,7 @@ export async function deleteFolderInCloud(id: string): Promise<boolean> {
   return true
 }
 
-export async function updateFolderInCloud(id: string, name: string, color: string): Promise<import("./types").Folder | null> {
+export async function updateFolderInCloud(id: string, name: string, color: string, icon_url?: string): Promise<import("./types").Folder | null> {
   let updatedFolder: import("./types").Folder | null = null;
   
   if (!IS_CLOUD_ONLY) {
@@ -695,16 +696,20 @@ export async function updateFolderInCloud(id: string, name: string, color: strin
     const existing = localFolders.find(f => f.id === id)
     if (existing) {
       updatedFolder = { ...existing, name, color }
+      if (icon_url !== undefined) updatedFolder.icon_url = icon_url
       const updatedFolders = localFolders.map(f => f.id === id ? updatedFolder! : f)
       localStorage.setItem(STORAGE_FOLDERS_KEY, JSON.stringify(updatedFolders))
     }
   }
 
   try {
+    const body: any = { name, color }
+    if (icon_url !== undefined) body.icon_url = icon_url
+    
     const response = await fetch(getProxyUrl(`/api/folders/${id}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, color }),
+      body: JSON.stringify(body),
     })
     
     if (response.ok) {

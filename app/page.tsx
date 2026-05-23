@@ -189,12 +189,12 @@ export default function Home() {
     setFolderDialogState({
       isOpen: true,
       folderId: folder.id,
-      initialData: { name: folder.name, color: folder.color || "#fef3c7" },
+      initialData: { name: folder.name, color: folder.color || "#fef3c7", icon_url: folder.icon_url },
       resolve: null
     })
   }
 
-  const handleFolderSubmit = async (name: string, color: string) => {
+  const handleFolderSubmit = async (name: string, color: string, icon_url?: string) => {
     setFolderDialogState(prev => ({ ...prev, isOpen: false }))
     const { resolve, folderId } = folderDialogState
     
@@ -202,13 +202,13 @@ export default function Home() {
       let updatedFolder: FolderType | null = null;
       
       if (folderId) {
-        updatedFolder = await updateFolderInCloud(folderId, name, color)
+        updatedFolder = await updateFolderInCloud(folderId, name, color, icon_url)
         if (updatedFolder) {
-          setFolders(prev => prev.map(f => f.id === folderId ? updatedFolder : f))
+          setFolders(prev => prev.map(f => f.id === folderId ? updatedFolder! : f))
           toast({ description: "Folder updated successfully" })
         }
       } else {
-        updatedFolder = await createFolderInCloud(name, color)
+        updatedFolder = await createFolderInCloud(name, color, icon_url)
         if (updatedFolder) {
           setFolders(prev => [updatedFolder, ...prev])
           toast({ description: "Folder created successfully" })

@@ -51,6 +51,7 @@ class NoteResponse(BaseModel):
 class FolderBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     color: str = Field(default="#6366f1")
+    icon_url: Optional[str] = None
 
 class FolderCreate(FolderBase):
     id: str = Field(..., description="Client-generated folder ID")
@@ -62,11 +63,13 @@ class FolderCreate(FolderBase):
 class FolderUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     color: Optional[str] = None
+    icon_url: Optional[str] = None
 
 class FolderResponse(BaseModel):
     id: str
     name: str
     color: str
+    icon_url: Optional[str] = None
     createdAt: str
     
     class Config:

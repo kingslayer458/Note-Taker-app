@@ -11,5 +11,14 @@ export interface Folder {
   id: string
   name: string
   color?: string
+  icon_url?: string
+  createdAt: string
+}
+
+export interface FolderType {
+  id: string
+  name: string
+  color: string
+  icon_url?: string
   createdAt: string
 }

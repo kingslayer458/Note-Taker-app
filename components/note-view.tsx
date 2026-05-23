@@ -74,17 +74,7 @@ export default function NoteView({ note, onBack, onDelete, onUpdate }: NoteViewP
         </Button>
       </div>
 
-      <Card 
-        className="relative overflow-hidden border border-border/50" 
-        style={{ 
-          background: `linear-gradient(135deg, ${color}15 0%, transparent 60%)`,
-          borderColor: `${color}20`
-        }}
-      >
-        <div 
-          className="absolute top-0 left-0 w-full h-[2px] opacity-100" 
-          style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} 
-        />
+      <Card className="border-t-4" style={{ borderTopColor: color }}>
         <CardHeader className="relative pb-0 p-4 sm:p-6">
           <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex gap-1 sm:gap-2">
             {!isEditing && (

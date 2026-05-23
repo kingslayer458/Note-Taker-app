@@ -20,6 +20,7 @@ async def get_all_folders():
             id=folder["_id"],
             name=folder["name"],
             color=folder.get("color", "#6366f1"),
+            icon_url=folder.get("icon_url", None),
             createdAt=folder["createdAt"]
         ))
     return folders
@@ -37,6 +38,7 @@ async def create_folder(folder: FolderCreate):
         "_id": folder.id,
         "name": folder.name,
         "color": folder.color,
+        "icon_url": folder.icon_url,
         "createdAt": folder.created_at,
         "syncedAt": datetime.utcnow()
     }
@@ -45,6 +47,7 @@ async def create_folder(folder: FolderCreate):
         id=folder_doc["_id"],
         name=folder_doc["name"],
         color=folder_doc["color"],
+        icon_url=folder_doc.get("icon_url"),
         createdAt=folder_doc["createdAt"]
     )
 
@@ -60,13 +63,22 @@ async def update_folder(folder_id: str, folder_update: FolderUpdate):
         update_data["name"] = folder_update.name
     if folder_update.color is not None:
         update_data["color"] = folder_update.color
+    if folder_update.icon_url is not None:
+        if folder_update.icon_url == "":
+            update_data["icon_url"] = None
+        else:
+            update_data["icon_url"] = folder_update.icon_url
         
     await collection.update_one({"_id": folder_id}, {"$set": update_data})
+    # if it was explicitly cleared, unset it in the DB or we just saved None which is fine
+    if folder_update.icon_url == "":
+        await collection.update_one({"_id": folder_id}, {"$unset": {"icon_url": ""}})
     updated_folder = await collection.find_one({"_id": folder_id})
     return FolderResponse(
         id=updated_folder["_id"],
         name=updated_folder["name"],
         color=updated_folder.get("color", "#6366f1"),
+        icon_url=updated_folder.get("icon_url"),
         createdAt=updated_folder["createdAt"]
     )
 

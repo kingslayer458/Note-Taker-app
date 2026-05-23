@@ -7,6 +7,7 @@ import { Trash2, Folder } from "lucide-react"
 import type { Note, Folder as FolderType } from "@/lib/types"
 import { formatDate } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { PremiumFolderIcon } from "@/components/notes-list"
 
 interface NoteCardProps {
   note: Note
@@ -30,17 +31,10 @@ export default function NoteCard({ note, folders = [], onClick, onDelete, onMove
 
   return (
     <Card
-      className="h-full min-h-[220px] cursor-pointer overflow-hidden border border-border/50 hover:shadow-md transition-all duration-300 hover:-translate-y-1 active:scale-[0.98] relative flex flex-col group"
-      style={{ 
-        background: `linear-gradient(135deg, ${note.color || '#6366f1'}15 0%, transparent 60%)`,
-        borderColor: `${note.color || '#6366f1'}20`
-      }}
+      className="h-full min-h-[220px] cursor-pointer overflow-hidden border-t-4 hover:shadow-md transition-all duration-200 active:scale-[0.98] relative flex flex-col"
+      style={{ borderTopColor: note.color || "#6366f1" }}
       onClick={onClick}
     >
-      <div 
-        className="absolute top-0 left-0 w-full h-[2px] opacity-50 group-hover:opacity-100 transition-opacity" 
-        style={{ background: `linear-gradient(90deg, ${note.color || '#6366f1'}, transparent)` }} 
-      />
       <CardContent className="p-4 sm:p-5 flex-1 pb-12">
         <h3 className="font-bold text-base sm:text-lg mb-2 line-clamp-1">{note.title}</h3>
         <div className="flex items-center flex-wrap gap-2 mb-3 sm:mb-4">
@@ -54,7 +48,12 @@ export default function NoteCard({ note, folders = [], onClick, onDelete, onMove
                 borderColor: `${currentFolder.color || '#6366f1'}30`
               }}
             >
-              <Folder className="h-3 w-3" />
+              {currentFolder.icon_url ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={currentFolder.icon_url} alt="Folder icon" className="w-3 h-3 object-contain" />
+              ) : (
+                <PremiumFolderIcon className="w-3 h-3" style={{ color: currentFolder.color || '#6366f1' }} />
+              )}
               {currentFolder.name}
             </span>
           )}
@@ -97,15 +96,32 @@ export default function NoteCard({ note, folders = [], onClick, onDelete, onMove
                   + Create New Folder
                 </DropdownMenuItem>
               )}
-              {folders.filter(f => f.id !== note.folder_id).map(f => (
-                <DropdownMenuItem 
-                  key={f.id} 
-                  onClick={() => onMoveToFolder(f.id)}
-                >
-                  <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: f.color || "#6366f1" }} />
-                  {f.name}
-                </DropdownMenuItem>
-              ))}
+              {folders.filter(f => f.id !== note.folder_id).map(f => {
+                let bgColor = f.color || "#6366f1";
+                // Migrate old pastels if they exist
+                if (bgColor === "#fef3c7") bgColor = "#d97706";
+                if (bgColor === "#e0f2fe") bgColor = "#2563eb";
+                if (bgColor === "#d1fae5") bgColor = "#059669";
+                if (bgColor === "#fee2e2") bgColor = "#e11d48";
+                if (bgColor === "#f3e8ff") bgColor = "#7c3aed";
+                if (bgColor === "#f1f5f9") bgColor = "#475569";
+                
+                return (
+                  <DropdownMenuItem 
+                    key={f.id} 
+                    onClick={() => onMoveToFolder(f.id)}
+                    className="flex items-center"
+                  >
+                    {f.icon_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={f.icon_url} alt="Folder icon" className="w-4 h-4 mr-2 object-contain" />
+                    ) : (
+                      <PremiumFolderIcon className="w-4 h-4 mr-2" style={{ color: bgColor }} />
+                    )}
+                    {f.name}
+                  </DropdownMenuItem>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
