@@ -1,7 +1,8 @@
 import type { Note } from "./types"
 
 const STORAGE_KEY = "noteTaker.notes"
-const IS_CLOUD_ONLY = process.env.NEXT_PUBLIC_CLOUD_ONLY === "true"
+const STORAGE_FOLDERS_KEY = "noteTaker.folders"
+export const IS_CLOUD_ONLY = process.env.NEXT_PUBLIC_CLOUD_ONLY === "true"
 
 // All cloud API calls now go through Next.js API routes (same origin).
 // The API key is added server-side — never exposed to the browser.
@@ -66,12 +67,15 @@ function normalizeBackupNote(raw: unknown): Note | null {
       : `${Date.now()}-${Math.random().toString(16).slice(2)}`
   }
 
+  const folder_id = note.folder_id || null
+
   return {
     id,
     title,
     content,
     color,
     createdAt,
+    folder_id,
   }
 }
 
@@ -220,65 +224,80 @@ export async function restoreNotesFromBackup(
 }
 
 /**
- * Save a new note to localStorage
+ * Save a new note to localStorage and/or cloud
+ * Returns true if successful, false if it failed (e.g. in Cloud-Only mode while offline)
  */
-export function saveNote(note: Note): void {
-  if (typeof window === "undefined") return
+export async function saveNote(note: Note): Promise<boolean> {
+  if (typeof window === "undefined") return false
 
   try {
     if (!IS_CLOUD_ONLY) {
       const notes = getNotes()
       const updatedNotes = [note, ...notes]
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotes))
+      
+      // Also save to backend (non-blocking)
+      saveNoteToCloud(note).catch(console.error)
+      return true
+    } else {
+      // Cloud-only mode: block until cloud save succeeds
+      const result = await saveNoteToCloud(note)
+      return result !== null
     }
-    
-    // Also save to backend (non-blocking)
-    saveNoteToCloud(note).catch(console.error)
   } catch (error) {
     console.error("Error saving note:", error)
-    throw new Error("Failed to save note to storage")
+    return false
   }
 }
 
 /**
- * Delete a note from localStorage
+ * Delete a note from localStorage and/or cloud
  */
-export function deleteNote(id: string): void {
-  if (typeof window === "undefined") return
+export async function deleteNote(id: string): Promise<boolean> {
+  if (typeof window === "undefined") return false
 
   try {
     if (!IS_CLOUD_ONLY) {
       const notes = getNotes()
       const updatedNotes = notes.filter((note) => note.id !== id)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotes))
+      
+      // Also delete from backend (non-blocking)
+      deleteNoteFromCloud(id).catch(console.error)
+      return true
+    } else {
+      // Cloud-only mode: block until cloud delete succeeds
+      return await deleteNoteFromCloud(id)
     }
-    
-    // Also delete from backend (non-blocking)
-    deleteNoteFromCloud(id).catch(console.error)
   } catch (error) {
     console.error("Error deleting note:", error)
-    throw new Error("Failed to delete note from storage")
+    return false
   }
 }
 
 /**
- * Update an existing note in localStorage
+ * Update an existing note in localStorage and/or cloud
  */
-export function updateNote(updatedNote: Note): void {
-  if (typeof window === "undefined") return
+export async function updateNote(updatedNote: Note): Promise<boolean> {
+  if (typeof window === "undefined") return false
 
   try {
     if (!IS_CLOUD_ONLY) {
       const notes = getNotes()
       const updatedNotes = notes.map((note) => (note.id === updatedNote.id ? updatedNote : note))
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotes))
+      
+      // Also update in backend (non-blocking)
+      updateNoteInCloud(updatedNote).catch(console.error)
+      return true
+    } else {
+      // Cloud-only mode: block until cloud update succeeds
+      const result = await updateNoteInCloud(updatedNote)
+      return result !== null
     }
-    
-    // Also update in backend (non-blocking)
-    updateNoteInCloud(updatedNote).catch(console.error)
   } catch (error) {
     console.error("Error updating note:", error)
-    throw new Error("Failed to update note in storage")
+    return false
   }
 }
 
@@ -302,6 +321,7 @@ export async function saveNoteToCloud(note: Note): Promise<Note | null> {
         content: encodeContent(note.content),
         color: note.color,
         createdAt: note.createdAt,
+        folder_id: note.folder_id || null,
       }),
     })
     
@@ -335,6 +355,7 @@ export async function updateNoteInCloud(note: Note): Promise<Note | null> {
         title: note.title,
         content: encodeContent(note.content),
         color: note.color,
+        folder_id: note.folder_id || null,
       }),
     })
     
@@ -584,4 +605,118 @@ export async function checkApiHealth(): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+// ============================================
+// FOLDERS API
+// ============================================
+
+export function getFoldersLocally(): import("./types").Folder[] {
+  if (typeof window === "undefined" || IS_CLOUD_ONLY) return []
+  try {
+    const foldersJson = localStorage.getItem(STORAGE_FOLDERS_KEY)
+    return foldersJson ? JSON.parse(foldersJson) : []
+  } catch {
+    return []
+  }
+}
+
+export async function getFoldersFromCloud(): Promise<import("./types").Folder[]> {
+  try {
+    const response = await fetch(getProxyUrl("/api/folders"))
+    if (!response.ok) throw new Error("Failed to fetch folders")
+    return await response.json()
+  } catch (error) {
+    console.error("Error fetching folders:", error)
+    return []
+  }
+}
+
+export async function createFolderInCloud(name: string, color: string = "#fef3c7"): Promise<import("./types").Folder | null> {
+  const id = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    
+  const folder = { id, name, color, createdAt: new Date().toISOString() }
+
+  if (!IS_CLOUD_ONLY) {
+    const localFolders = getFoldersLocally()
+    localStorage.setItem(STORAGE_FOLDERS_KEY, JSON.stringify([folder, ...localFolders]))
+  }
+
+  try {
+    const response = await fetch(getProxyUrl("/api/folders"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(folder),
+    })
+    
+    if (!response.ok && IS_CLOUD_ONLY) throw new Error("Failed to create folder")
+  } catch (error) {
+    console.error("Error creating folder in cloud:", error)
+    if (IS_CLOUD_ONLY) return null
+  }
+  
+  return folder
+}
+
+export async function deleteFolderInCloud(id: string): Promise<boolean> {
+  if (!IS_CLOUD_ONLY) {
+    const localFolders = getFoldersLocally()
+    const updatedFolders = localFolders.filter((folder) => folder.id !== id)
+    localStorage.setItem(STORAGE_FOLDERS_KEY, JSON.stringify(updatedFolders))
+    
+    const localNotes = getNotes()
+    const updatedNotes = localNotes.map((note) => 
+      note.folder_id === id ? { ...note, folder_id: null } : note
+    )
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedNotes))
+  }
+
+  try {
+    const response = await fetch(getProxyUrl(`/api/folders/${id}`), {
+      method: "DELETE",
+    })
+    
+    if (!response.ok && response.status !== 404 && IS_CLOUD_ONLY) return false
+  } catch (error) {
+    console.error("Error deleting folder from cloud:", error)
+    if (IS_CLOUD_ONLY) return false
+  }
+  
+  return true
+}
+
+export async function updateFolderInCloud(id: string, name: string, color: string): Promise<import("./types").Folder | null> {
+  let updatedFolder: import("./types").Folder | null = null;
+  
+  if (!IS_CLOUD_ONLY) {
+    const localFolders = getFoldersLocally()
+    const existing = localFolders.find(f => f.id === id)
+    if (existing) {
+      updatedFolder = { ...existing, name, color }
+      const updatedFolders = localFolders.map(f => f.id === id ? updatedFolder! : f)
+      localStorage.setItem(STORAGE_FOLDERS_KEY, JSON.stringify(updatedFolders))
+    }
+  }
+
+  try {
+    const response = await fetch(getProxyUrl(`/api/folders/${id}`), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, color }),
+    })
+    
+    if (response.ok) {
+      updatedFolder = await response.json()
+    } else if (IS_CLOUD_ONLY) {
+      throw new Error("Failed to update folder")
+    }
+  } catch (error) {
+    console.error("Error updating folder in cloud:", error)
+    if (IS_CLOUD_ONLY) return null
+  }
+  
+  // If offline but not cloud-only, return the optimistic updated folder
+  return updatedFolder
 }

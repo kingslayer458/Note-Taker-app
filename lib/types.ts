@@ -4,4 +4,12 @@ export interface Note {
   content: string
   createdAt: string
   color?: string
+  folder_id?: string | null
+}
+
+export interface Folder {
+  id: string
+  name: string
+  color?: string
+  createdAt: string
 }

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { PenLine, List, Moon, Sun, Menu, X, Cloud, CloudOff, RefreshCw, Download, Upload, Database, LogOut } from "lucide-react"
+import { PenLine, List, Moon, Sun, Menu, X, Cloud, CloudOff, RefreshCw, Download, Upload, Database, LogOut, FolderPlus } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, useEffect, useRef, type ChangeEvent } from "react"
 import { syncNotesToCloud, checkApiHealth, createNotesBackup, restoreNotesFromBackup } from "@/lib/storage"
@@ -15,9 +15,10 @@ interface SidebarProps {
   setView: (view: "list" | "add" | "view") => void
   noteCount: number
   onSyncComplete?: (notes: Note[]) => void
+  onCreateFolder?: () => void
 }
 
-export default function Sidebar({ view, setView, noteCount, onSyncComplete }: SidebarProps) {
+export default function Sidebar({ view, setView, noteCount, onSyncComplete, onCreateFolder }: SidebarProps) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -237,6 +238,21 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete }: Si
             <PenLine className="mr-2 h-4 w-4" />
             New Note
           </Button>
+
+          {onCreateFolder && (
+            <Button
+              variant="ghost"
+              className="w-full justify-start py-5"
+              onClick={() => {
+                onCreateFolder()
+                if (window.innerWidth < 768) setIsOpen(false)
+              }}
+              disabled={isLockedOut}
+            >
+              <FolderPlus className="mr-2 h-4 w-4" />
+              New Folder
+            </Button>
+          )}
 
           <Button
             variant="ghost"
