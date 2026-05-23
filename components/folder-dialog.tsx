@@ -165,15 +165,50 @@ export default function FolderDialog({ isOpen, initialData, onClose, onSubmit }:
 
             <TabsContent value="icon" className="pt-4">
               <div className="space-y-4">
+                <div className="space-y-2 bg-muted/40 p-3 rounded-lg border border-border/50">
+                  <Label htmlFor="custom-url" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Paste Custom Image URL</Label>
+                  <div className="flex gap-2 items-center">
+                    <Input 
+                      id="custom-url"
+                      placeholder="https://example.com/icon.png or .gif" 
+                      value={selectedIconUrl || ""}
+                      onChange={e => setSelectedIconUrl(e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                    {selectedIconUrl && (
+                      <div className="w-8 h-8 shrink-0 bg-background border rounded flex items-center justify-center overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={selectedIconUrl} 
+                          alt="Preview" 
+                          className="w-6 h-6 object-contain" 
+                          onError={(e) => { 
+                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'; 
+                          }} 
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="relative py-1">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground font-medium">Or choose from library</span>
+                  </div>
+                </div>
+
                 <div className="flex justify-between items-center">
                   <Input 
-                    placeholder="Search icons..." 
+                    placeholder="Search library..." 
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="max-w-[200px]"
+                    className="max-w-[200px] h-8 text-xs"
                   />
                   {selectedIconUrl && (
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedIconUrl("")}>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedIconUrl("")} className="h-8 text-xs">
                       Clear Icon
                     </Button>
                   )}

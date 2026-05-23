@@ -30,3 +30,9 @@ docker tag note-taker-app-frontend:latest kingslayerone/note-taker-app-frontend:
 
 docker push kingslayerone/note-taker-app-backend:latest
 docker push kingslayerone/note-taker-app-frontend:latest
+
+
+hosted icons/gifs
+
+https://www.steamgriddb.com/icons
+https://giphy.com/
