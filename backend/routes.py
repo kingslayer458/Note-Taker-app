@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 from datetime import datetime
 from models import NoteCreate, NoteUpdate, NoteResponse, SyncRequest, SyncResponse
-from database import get_notes_collection
+from database import get_notes_collection, get_folders_collection
 from config import settings
 from auth import verify_api_key
 
@@ -11,6 +11,9 @@ router = APIRouter(prefix="/api/notes", tags=["notes"], dependencies=[Depends(ve
 
 def get_collection():
     return get_notes_collection(settings.database_name)
+
+def get_f_collection():
+    return get_folders_collection(settings.database_name)
 
 
 @router.get("/", response_model=List[NoteResponse])
@@ -66,15 +69,18 @@ async def create_note(note: NoteCreate):
         folder_id=note_doc.get("folder_id")
     )
 
+from models import FolderResponse
 @router.post("/sync", response_model=SyncResponse)
 async def sync_notes(sync_request: SyncRequest):
     """
-    Sync notes from client localStorage to MongoDB.
-    This will upsert all notes (insert if new, update if exists).
+    Sync notes and folders from client localStorage to MongoDB.
+    This will upsert all items (insert if new, update if exists).
     """
     collection = get_collection()
+    f_collection = get_f_collection()
     synced_count = 0
     synced_notes = []
+    synced_folders = []
     
     for note in sync_request.notes:
         note_doc = {
@@ -87,7 +93,6 @@ async def sync_notes(sync_request: SyncRequest):
             "syncedAt": datetime.utcnow()
         }
         
-        # Upsert: update if exists, insert if not
         await collection.update_one(
             {"_id": note.id},
             {"$set": note_doc},
@@ -103,13 +108,36 @@ async def sync_notes(sync_request: SyncRequest):
             createdAt=note_doc["createdAt"],
             folder_id=note_doc.get("folder_id")
         ))
+        
+    if sync_request.folders:
+        for folder in sync_request.folders:
+            folder_doc = {
+                "_id": folder.id,
+                "name": folder.name,
+                "color": folder.color,
+                "icon_url": folder.icon_url,
+                "createdAt": folder.created_at,
+                "syncedAt": datetime.utcnow()
+            }
+            await f_collection.update_one(
+                {"_id": folder.id},
+                {"$set": folder_doc},
+                upsert=True
+            )
+            synced_folders.append(FolderResponse(
+                id=folder_doc["_id"],
+                name=folder_doc["name"],
+                color=folder_doc["color"],
+                icon_url=folder_doc.get("icon_url"),
+                createdAt=folder_doc["createdAt"]
+            ))
     
     return SyncResponse(
         success=True,
         synced_count=synced_count,
         notes=synced_notes,
-        folders=[], # Returning empty folders for now if not synced
-        message=f"Successfully synced {synced_count} notes"
+        folders=synced_folders,
+        message=f"Successfully synced {synced_count} notes and {len(synced_folders)} folders"
     )
 
 

@@ -86,22 +86,31 @@ function normalizeBackupNote(raw: unknown): Note | null {
 export async function createNotesBackup(): Promise<{ success: boolean; data?: string; message: string }> {
   try {
     let notes = getNotes()
+    let folders = getFoldersLocally()
     const isOnline = await checkApiHealth()
 
     if (isOnline) {
       notes = await fetchAndMergeNotes()
+      const cloudFolders = await getFoldersFromCloud()
+      if (cloudFolders.length > 0) {
+        folders = cloudFolders
+        if (!IS_CLOUD_ONLY) {
+          localStorage.setItem(STORAGE_FOLDERS_KEY, JSON.stringify(folders))
+        }
+      }
     }
 
     const payload = {
       version: 1,
       exportedAt: new Date().toISOString(),
       notes,
+      folders,
     }
 
     return {
       success: true,
       data: JSON.stringify(payload, null, 2),
-      message: `Backup created with ${notes.length} notes`,
+      message: `Backup created with ${notes.length} notes and ${folders.length} folders`,
     }
   } catch (error) {
     console.error("Error creating backup:", error)
@@ -120,18 +129,20 @@ export async function restoreNotesFromBackup(
   backupJson: string,
 ): Promise<{ success: boolean; message: string; notes: Note[] }> {
   try {
-    const parsed = JSON.parse(backupJson) as unknown
+    const parsed = JSON.parse(backupJson) as any
 
-    let rawNotes: unknown[] = []
+    let rawNotes: any[] = []
+    let rawFolders: any[] = []
+    
     if (Array.isArray(parsed)) {
       rawNotes = parsed
-    } else if (
-      parsed &&
-      typeof parsed === "object" &&
-      "notes" in parsed &&
-      Array.isArray((parsed as { notes: unknown[] }).notes)
-    ) {
-      rawNotes = (parsed as { notes: unknown[] }).notes
+    } else if (parsed && typeof parsed === "object") {
+      if (Array.isArray(parsed.notes)) {
+        rawNotes = parsed.notes
+      }
+      if (Array.isArray(parsed.folders)) {
+        rawFolders = parsed.folders
+      }
     } else {
       throw new Error("Invalid backup JSON format")
     }
@@ -140,8 +151,8 @@ export async function restoreNotesFromBackup(
       .map(normalizeBackupNote)
       .filter((note): note is Note => note !== null)
 
-    if (restoredNotes.length === 0) {
-      throw new Error("Backup file does not contain valid notes")
+    if (restoredNotes.length === 0 && rawFolders.length === 0) {
+      throw new Error("Backup file does not contain valid notes or folders")
     }
 
     const existingNotes = getNotes()
@@ -158,9 +169,19 @@ export async function restoreNotesFromBackup(
     const mergedNotes = Array.from(notesMap.values()).sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
+    
+    // Process Folders
+    const existingFolders = getFoldersLocally()
+    const foldersMap = new Map<string, any>()
+    for (const folder of existingFolders) foldersMap.set(folder.id, folder)
+    for (const folder of rawFolders) foldersMap.set(folder.id, folder)
+    const mergedFolders = Array.from(foldersMap.values())
 
     if (!IS_CLOUD_ONLY) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedNotes))
+      if (mergedFolders.length > 0) {
+        localStorage.setItem(STORAGE_FOLDERS_KEY, JSON.stringify(mergedFolders))
+      }
     }
 
     // Attempt cloud sync but never let it cause a failure —
@@ -177,7 +198,8 @@ export async function restoreNotesFromBackup(
               "Content-Type": "application/json"
             },
             body: JSON.stringify({ 
-              notes: restoredNotes.map(n => ({ ...n, content: encodeContent(n.content) })) 
+              notes: restoredNotes.map(n => ({ ...n, content: encodeContent(n.content) })),
+              folders: rawFolders
             }),
           })
           
@@ -210,7 +232,7 @@ export async function restoreNotesFromBackup(
 
     return {
       success: true,
-      message: `Restored ${restoredNotes.length} notes successfully`,
+      message: `Restored ${restoredNotes.length} notes and ${rawFolders.length} folders successfully`,
       notes: mergedNotes,
     }
   } catch (error) {
@@ -417,9 +439,10 @@ export async function pushNotesToCloud(): Promise<{ success: boolean; message: s
 
   try {
     const localNotes = getNotes()
+    const localFolders = getFoldersLocally()
     
-    if (localNotes.length === 0) {
-      return { success: true, message: "No notes to push" }
+    if (localNotes.length === 0 && localFolders.length === 0) {
+      return { success: true, message: "No notes or folders to push" }
     }
     
     const response = await fetch(getProxyUrl("/api/notes/sync"), {
@@ -428,7 +451,8 @@ export async function pushNotesToCloud(): Promise<{ success: boolean; message: s
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ 
-        notes: localNotes.map(n => ({ ...n, content: encodeContent(n.content) })) 
+        notes: localNotes.map(n => ({ ...n, content: encodeContent(n.content) })),
+        folders: localFolders
       }),
     })
     
@@ -474,17 +498,19 @@ export async function syncNotesToCloud(): Promise<{ success: boolean; message: s
   }
 
   try {
-    // Step 1: Push local notes to cloud
+    // Step 1: Push local notes and folders to cloud
     const localNotes = getNotes()
+    const localFolders = getFoldersLocally()
     
-    if (localNotes.length > 0) {
+    if (localNotes.length > 0 || localFolders.length > 0) {
       const pushResponse = await fetch(getProxyUrl("/api/notes/sync"), {
         method: "POST",
         headers: { 
           "Content-Type": "application/json"
         },
         body: JSON.stringify({ 
-          notes: localNotes.map(n => ({ ...n, content: encodeContent(n.content) })) 
+          notes: localNotes.map(n => ({ ...n, content: encodeContent(n.content) })),
+          folders: localFolders
         }),
       })
       
@@ -493,17 +519,18 @@ export async function syncNotesToCloud(): Promise<{ success: boolean; message: s
       }
     }
     
-    // Step 2: Fetch all notes from cloud (includes any added directly to MongoDB)
+    // Step 2: Fetch all notes and folders from cloud
     const cloudNotes = await getNotesFromCloud()
+    const cloudFolders = await getFoldersFromCloud()
     
-    // Step 3: Update localStorage with cloud notes (cloud is source of truth after sync)
-    if (cloudNotes.length > 0) {
-      // Sort by createdAt descending
-      cloudNotes.sort((a, b) => 
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )
-      if (!IS_CLOUD_ONLY) {
+    // Step 3: Update localStorage with cloud data
+    if (!IS_CLOUD_ONLY) {
+      if (cloudNotes.length > 0) {
+        cloudNotes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudNotes))
+      }
+      if (cloudFolders.length > 0) {
+        localStorage.setItem(STORAGE_FOLDERS_KEY, JSON.stringify(cloudFolders))
       }
     }
     
