@@ -127,7 +127,7 @@ export async function createNotesBackup(): Promise<{ success: boolean; data?: st
  */
 export async function restoreNotesFromBackup(
   backupJson: string,
-): Promise<{ success: boolean; message: string; notes: Note[] }> {
+): Promise<{ success: boolean; message: string; notes: Note[]; folders: import("./types").Folder[] }> {
   try {
     const parsed = JSON.parse(backupJson) as any
 
@@ -205,10 +205,12 @@ export async function restoreNotesFromBackup(
           
           if (pushResponse.ok) {
             const cloudNotes = await getNotesFromCloud()
+            const cloudFolders = await getFoldersFromCloud()
             return {
               success: true,
               message: `Restored ${restoredNotes.length} notes directly to cloud`,
               notes: cloudNotes,
+              folders: cloudFolders,
             }
           }
           console.warn("Cloud push failed during restore in cloud-only mode")
@@ -219,6 +221,7 @@ export async function restoreNotesFromBackup(
               success: true,
               message: `Restored ${restoredNotes.length} notes and synced to cloud`,
               notes: syncResult.notes,
+              folders: syncResult.folders,
             }
           }
           // Cloud sync failed but local restore succeeded — don't alarm the user
@@ -234,6 +237,7 @@ export async function restoreNotesFromBackup(
       success: true,
       message: `Restored ${restoredNotes.length} notes and ${rawFolders.length} folders successfully`,
       notes: mergedNotes,
+      folders: mergedFolders,
     }
   } catch (error) {
     console.error("Error restoring backup:", error)
@@ -241,6 +245,7 @@ export async function restoreNotesFromBackup(
       success: false,
       message: error instanceof Error ? error.message : "Failed to restore backup",
       notes: getNotes(),
+      folders: getFoldersLocally(),
     }
   }
 }
@@ -478,21 +483,24 @@ export async function pushNotesToCloud(): Promise<{ success: boolean; message: s
  * Full two-way sync: Push local notes to cloud, then pull cloud notes to localStorage
  * Returns the merged notes array
  */
-export async function syncNotesToCloud(): Promise<{ success: boolean; message: string; notes: Note[] }> {
+export async function syncNotesToCloud(): Promise<{ success: boolean; message: string; notes: Note[]; folders: import("./types").Folder[] }> {
   if (IS_CLOUD_ONLY) {
     try {
       const cloudNotes = await getNotesFromCloud()
+      const cloudFolders = await getFoldersFromCloud()
       return { 
         success: true, 
-        message: `Synced successfully! ${cloudNotes.length} notes in total`,
-        notes: cloudNotes
+        message: `Synced successfully! ${cloudNotes.length} notes and ${cloudFolders.length} folders in total`,
+        notes: cloudNotes,
+        folders: cloudFolders
       }
     } catch (error) {
       console.error("Error syncing notes in cloud mode:", error)
       return { 
         success: false, 
         message: error instanceof Error ? error.message : "Failed to sync notes",
-        notes: []
+        notes: [],
+        folders: []
       }
     }
   }
@@ -536,15 +544,17 @@ export async function syncNotesToCloud(): Promise<{ success: boolean; message: s
     
     return { 
       success: true, 
-      message: `Synced successfully! ${cloudNotes.length} notes in total`,
-      notes: cloudNotes
+      message: `Synced successfully! ${cloudNotes.length} notes and ${cloudFolders.length} folders in total`,
+      notes: cloudNotes,
+      folders: cloudFolders
     }
   } catch (error) {
     console.error("Error syncing notes:", error)
     return { 
       success: false, 
       message: error instanceof Error ? error.message : "Failed to sync notes",
-      notes: getNotes() // Return local notes on failure
+      notes: getNotes(), // Return local notes on failure
+      folders: getFoldersLocally()
     }
   }
 }

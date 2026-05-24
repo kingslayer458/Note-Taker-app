@@ -78,8 +78,9 @@ export default function Home() {
   }, [])
 
   // Handler for when sync completes - refresh notes from storage
-  const handleSyncComplete = (syncedNotes: Note[]) => {
+  const handleSyncComplete = (syncedNotes: Note[], syncedFolders: FolderType[] = []) => {
     setNotes(syncedNotes)
+    setFolders(syncedFolders)
     // Update selected note if it was updated
     if (selectedNote) {
       const updatedSelectedNote = syncedNotes.find(n => n.id === selectedNote.id)

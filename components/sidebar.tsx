@@ -6,7 +6,7 @@ import { PenLine, List, Moon, Sun, Menu, X, Cloud, CloudOff, RefreshCw, Download
 import { useTheme } from "next-themes"
 import { useState, useEffect, useRef, type ChangeEvent } from "react"
 import { syncNotesToCloud, checkApiHealth, createNotesBackup, restoreNotesFromBackup } from "@/lib/storage"
-import type { Note } from "@/lib/types"
+import type { Note, Folder } from "@/lib/types"
 
 const IS_CLOUD_ONLY = process.env.NEXT_PUBLIC_CLOUD_ONLY === "true"
 
@@ -14,7 +14,7 @@ interface SidebarProps {
   view: "list" | "add" | "view"
   setView: (view: "list" | "add" | "view") => void
   noteCount: number
-  onSyncComplete?: (notes: Note[]) => void
+  onSyncComplete?: (notes: Note[], folders: Folder[]) => void
   onCreateFolder?: () => void
 }
 
@@ -42,9 +42,9 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete, onCr
         const online = await checkApiHealth()
         if (online) {
           setIsOnline(true)
-          // Fetch notes automatically when coming back online
+          // Fetch notes and folders automatically when coming back online
           const result = await syncNotesToCloud()
-          if (result.success) onSyncComplete?.(result.notes)
+          if (result.success) onSyncComplete?.(result.notes, result.folders)
         }
       }, 10000)
     }
@@ -68,7 +68,7 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete, onCr
       setIsOnline(online)
       
       if (result.success) {
-        onSyncComplete?.(result.notes)
+        onSyncComplete?.(result.notes, result.folders)
       }
       alert(result.message)
     } catch (error) {
@@ -127,7 +127,7 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete, onCr
       setIsOnline(online)
 
       if (result.success) {
-        onSyncComplete?.(result.notes)
+        onSyncComplete?.(result.notes, result.folders)
       }
 
       alert(result.message)
