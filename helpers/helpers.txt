@@ -11,6 +11,7 @@ to run this without nginx guide
 docker compose -f docker-compose.default.yml up
 docker compose -f docker-compose.default.yml up -d --build
 docker compose -f docker-compose.default.yml down
+docker compose -f docker-compose.default.yml build
 
 in backend .env put environment to development
 
