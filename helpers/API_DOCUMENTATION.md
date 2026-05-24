@@ -22,6 +22,20 @@ Authentication for all `/api/notes/*` endpoints:
 
 ---
 
+## Simple GET Reference
+- `GET /api/notes` - Fetch all notes.
+- `GET /api/notes/{note_id}` - Fetch one note by ID.
+- `GET /api/folders` - Fetch all folders.
+
+Example:
+
+```bash
+curl -X GET http://localhost:8000/api/notes \
+  -H "x-api-key: your-api-key"
+```
+
+---
+
 ## Health Check
 
 Check if the API server is running and connected to MongoDB.
