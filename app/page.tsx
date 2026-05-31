@@ -151,6 +151,10 @@ export default function Home() {
     setView("view")
   }
 
+  const handleStartNoteCreation = () => {
+    setView("add")
+  }
+
   const handleUpdateNote = async (updatedNote: Note) => {
     try {
       const success = await updateNote(updatedNote)
@@ -279,6 +283,7 @@ export default function Home() {
             currentFolderId={currentFolderId}
             onFolderClick={(id) => setCurrentFolderId(id)}
             onBackToRoot={() => setCurrentFolderId(null)}
+            onCreateNote={handleStartNoteCreation}
             isLoading={isLoading}
             onSelectNote={handleSelectNote}
             onDeleteNote={handleDeleteNote}
@@ -289,7 +294,13 @@ export default function Home() {
           />
         )}
 
-        {view === "add" && <AddNote onAddNote={handleAddNote} />}
+        {view === "add" && (
+          <AddNote
+            onAddNote={handleAddNote}
+            folderId={currentFolderId}
+            folderName={currentFolderId ? folders.find(folder => folder.id === currentFolderId)?.name || null : null}
+          />
+        )}
 
         {view === "view" && selectedNote && (
           <NoteView

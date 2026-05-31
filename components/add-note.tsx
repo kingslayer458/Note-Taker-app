@@ -11,9 +11,11 @@ import type { Note } from "@/lib/types"
 
 interface AddNoteProps {
   onAddNote: (note: Note) => void
+  folderId?: string | null
+  folderName?: string | null
 }
 
-export default function AddNote({ onAddNote }: AddNoteProps) {
+export default function AddNote({ onAddNote, folderId = null, folderName = null }: AddNoteProps) {
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [isSaving, setIsSaving] = useState(false)
@@ -47,6 +49,7 @@ export default function AddNote({ onAddNote }: AddNoteProps) {
         content: content.trim() || "No content",
         createdAt: new Date().toISOString(),
         color,
+        folder_id: folderId,
       }
 
       // Add a small delay to show the saving animation
@@ -72,6 +75,9 @@ export default function AddNote({ onAddNote }: AddNoteProps) {
       <Card className="border-t-4" style={{ borderTopColor: color }}>
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="text-lg sm:text-xl">Create New Note</CardTitle>
+          {folderName && (
+            <p className="text-sm text-muted-foreground mt-1">Saving into {folderName}</p>
+          )}
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4 p-4 sm:p-6 pt-0 sm:pt-0">

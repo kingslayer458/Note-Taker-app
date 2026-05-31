@@ -23,6 +23,7 @@ interface NotesListProps {
   currentFolderId?: string | null
   onFolderClick?: (id: string) => void
   onBackToRoot?: () => void
+  onCreateNote?: () => void
   isLoading: boolean
   onSelectNote: (note: Note) => void
   onDeleteNote: (id: string) => void
@@ -38,6 +39,7 @@ export default function NotesList({
   currentFolderId = null,
   onFolderClick,
   onBackToRoot,
+  onCreateNote,
   isLoading, 
   onSelectNote, 
   onDeleteNote, 
@@ -98,10 +100,17 @@ export default function NotesList({
       </div>
       
       {currentFolderId && (
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <FolderIcon className="h-5 w-5 text-primary" />
-          {currentFolderName}
-        </h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <FolderIcon className="h-5 w-5 text-primary" />
+            {currentFolderName}
+          </h2>
+          {onCreateNote && (
+            <Button onClick={onCreateNote} className="sm:self-start">
+              Create Note in {currentFolderName}
+            </Button>
+          )}
+        </div>
       )}
 
       {(!currentFolderId && filteredFolders.length === 0 && filteredNotes.length === 0) ? (
