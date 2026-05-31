@@ -14,11 +14,12 @@ interface SidebarProps {
   view: "list" | "add" | "view"
   setView: (view: "list" | "add" | "view") => void
   noteCount: number
+  isCreatingNoteInFolder?: boolean
   onSyncComplete?: (notes: Note[], folders: Folder[]) => void
   onCreateFolder?: () => void
 }
 
-export default function Sidebar({ view, setView, noteCount, onSyncComplete, onCreateFolder }: SidebarProps) {
+export default function Sidebar({ view, setView, noteCount, isCreatingNoteInFolder = false, onSyncComplete, onCreateFolder }: SidebarProps) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -239,7 +240,7 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete, onCr
             New Note
           </Button>
 
-          {onCreateFolder && (
+          {!isCreatingNoteInFolder && onCreateFolder && (
             <Button
               variant="ghost"
               className="w-full justify-start py-5"
@@ -254,42 +255,46 @@ export default function Sidebar({ view, setView, noteCount, onSyncComplete, onCr
             </Button>
           )}
 
-          <Button
-            variant="ghost"
-            className="w-full justify-start py-5"
-            onClick={handleSync}
-            disabled={isSyncing || isLockedOut}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-            {isSyncing ? "Syncing..." : "Sync to Cloud"}
-          </Button>
+          {!isCreatingNoteInFolder && (
+            <Button
+              variant="ghost"
+              className="w-full justify-start py-5"
+              onClick={handleSync}
+              disabled={isSyncing || isLockedOut}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
+              {isSyncing ? "Syncing..." : "Sync to Cloud"}
+            </Button>
+          )}
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="w-full justify-start py-5"
-                disabled={isBackingUp || isRestoring || isLockedOut}
-              >
-                <Database className="mr-2 h-4 w-4" />
-                {isBackingUp
-                  ? "Creating backup..."
-                  : isRestoring
-                    ? "Restoring..."
-                    : "Backup / Restore"}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="start">
-              <DropdownMenuItem onClick={handleBackup} disabled={isBackingUp || isRestoring}>
-                <Download className="mr-2 h-4 w-4" />
-                Backup as JSON
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleRestoreClick} disabled={isBackingUp || isRestoring}>
-                <Upload className="mr-2 h-4 w-4" />
-                Restore from JSON
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!isCreatingNoteInFolder && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start py-5"
+                  disabled={isBackingUp || isRestoring || isLockedOut}
+                >
+                  <Database className="mr-2 h-4 w-4" />
+                  {isBackingUp
+                    ? "Creating backup..."
+                    : isRestoring
+                      ? "Restoring..."
+                      : "Backup / Restore"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="start">
+                <DropdownMenuItem onClick={handleBackup} disabled={isBackingUp || isRestoring}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Backup as JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleRestoreClick} disabled={isBackingUp || isRestoring}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Restore from JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           <input
             ref={restoreInputRef}

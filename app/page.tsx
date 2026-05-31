@@ -271,6 +271,7 @@ export default function Home() {
         view={view} 
         setView={setView} 
         noteCount={notes.length} 
+        isCreatingNoteInFolder={view === "add" && !!currentFolderId}
         onSyncComplete={handleSyncComplete}
         onCreateFolder={handleCreateFolder}
       />
