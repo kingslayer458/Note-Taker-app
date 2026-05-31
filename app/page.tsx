@@ -276,7 +276,7 @@ export default function Home() {
         onCreateFolder={handleCreateFolder}
       />
 
-      <main className="flex-1 overflow-auto p-4 md:p-6 pt-20 md:pt-6 w-full">
+      <main className="flex-1 overflow-auto scrollbar-none p-4 md:p-6 pt-20 md:pt-6 w-full">
         {view === "list" && (
           <NotesList
             notes={notes}

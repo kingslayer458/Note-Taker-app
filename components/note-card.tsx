@@ -77,7 +77,7 @@ export default function NoteCard({ note, folders = [], onClick, onDelete, onMove
             </DropdownMenuTrigger>
             <DropdownMenuContent
               onClick={(e) => e.stopPropagation()}
-              className="max-h-[600px] overflow-y-auto overflow-x-hidden pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+              className="max-h-[600px] overflow-y-auto overflow-x-hidden pr-1 scrollbar-none"
             >
               {note.folder_id && (
                 <DropdownMenuItem 
