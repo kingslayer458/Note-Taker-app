@@ -208,7 +208,13 @@ export default function FolderDialog({ isOpen, initialData, onClose, onSubmit }:
                     className="max-w-[200px] h-8 text-xs"
                   />
                   {selectedIconUrl && (
-                    <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedIconUrl("")} className="h-8 text-xs">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedIconUrl("")}
+                      className="h-8 shrink-0 border-border/70 bg-background px-3 text-xs text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground"
+                    >
                       Clear Icon
                     </Button>
                   )}
