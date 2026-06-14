@@ -9,13 +9,7 @@ A minimal note-taking application repository. Follow the repository's `Makefile`
 
 ## Setup
 
-1. Run the setup helper (this handles installing and preparing the environment):
-
-   ```powershell
-   make setup
-   ```
-
-2. Provide your MongoDB connection string by setting `MONGODB_URL` in `secrets/.env.backend`.
+1. Provide your MongoDB connection string by setting `MONGODB_URL` in `scripts/.env.backend.example` only !!!!
 
    Example cloud URL:
 
@@ -28,22 +22,31 @@ A minimal note-taking application repository. Follow the repository's `Makefile`
 
 ## Run
 
-- If you have already set `MONGODB_URL` in `secrets/.env.backend`, start the app with:
+- to start the app run this cokmmand in the terminal it will automatically build and start the backend and frontend services and set up api key for the frontend to connect to the backend:
 
   ```powershell
   make start
   ```
 
-- Otherwise bring up the full stack (build and run services) with:
+- to down the app run this command in the terminal it will stop and remove the backend and frontend containers:
 
   ```powershell
-  make up
+  make down
+  ```
+
+- to restart the app run this command in the terminal:
+
+  ```powershell
+  make restart
+  ```
+
+  - to check live logs in the app run this command in the terminal:
+  
+  ```powershell
+  make logs
   ```
 
 ## Troubleshooting
 
 - If the application cannot connect to MongoDB, verify `MONGODB_URL` is correct and reachable from your machine or container network.
 
-## Next steps
-
-Update this README with service endpoints, environment variable descriptions, and any developer notes as the project evolves.
