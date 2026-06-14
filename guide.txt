@@ -1,0 +1,18 @@
+Just run `make setup` and it will handle the setup for you.
+
+After that, set up `MONGODB_URL` in `secrets/.env.backend`.
+
+after that do
+
+make up
+
+
+if you have set up MONGODB_URL already then use 
+
+make start
+
+note:
+cloud MONGODB_URL url is req
+eg: MONGODB_URL=mongodb+srv://user:password@ip/
+
+and the default password is kingnote

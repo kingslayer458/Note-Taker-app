@@ -1,0 +1,38 @@
+services:
+  note_frontend:
+    image: kingslayerone/note-taker-app-frontend:latest
+    container_name: note_frontend
+    restart: always
+    env_file:
+      - ./secrets/.env.frontend
+    ports:
+      - "3000:6000"
+    environment:
+      # Override the BACKEND_URL to point to the backend container directly via Docker network
+      - BACKEND_URL=http://note_backend:8000
+      - PORT=6000
+      - NEXT_PUBLIC_CLOUD_ONLY=true
+    depends_on:
+      - note_backend
+    networks:
+      - note_network
+
+  note_backend:
+    image: kingslayerone/note-taker-app-backend:latest
+    container_name: note_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - ENVIRONMENT=development
+      - HOST=0.0.0.0
+      - DATABASE_NAME=notetaker
+    env_file:
+      - ./secrets/.env.backend
+    networks:
+      - note_network
+
+networks:
+  note_network:
+    driver: bridge

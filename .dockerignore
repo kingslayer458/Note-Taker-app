@@ -1,4 +1,7 @@
 secrets/
+.git/
+.gitignore
+.dockerignore
 __pycache__/
 *.pyc
 *.pyo
@@ -8,3 +11,4 @@ __pycache__/
 *.tmp
 *.swp
 cred.txt
+
