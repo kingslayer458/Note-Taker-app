@@ -2,11 +2,6 @@
 
 A minimal note-taking application repository. Follow the repository's `Makefile` for the supported setup and run commands.
 
-## Requirements
-
-- Python 3.10+ (for local helper scripts)
-- Docker & docker-compose (for containerized runs)
-
 ## Setup
 
 1. Provide your MongoDB connection string by setting `MONGODB_URL` in `scripts/.env.backend.example` only !!!!
