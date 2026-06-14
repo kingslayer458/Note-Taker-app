@@ -40,7 +40,7 @@ A minimal note-taking application repository. Follow the repository's `Makefile`
   make restart
   ```
 
-  - to check live logs in the app run this command in the terminal:
+- to check live logs in the app run this command in the terminal:
   
   ```powershell
   make logs
